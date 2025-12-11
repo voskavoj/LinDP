@@ -1,7 +1,7 @@
 import sys
 
-from source.common import tsv_to_dataframe
-from source.processing import quick_plot
+from source.data_processing import tsv_to_dataframe
+from source.plotting import quick_plot
 
 
 def open_and_plot(path):
