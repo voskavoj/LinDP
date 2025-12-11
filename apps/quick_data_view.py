@@ -1,6 +1,4 @@
 import sys
-import pandas as pd
-import matplotlib.pyplot as plt
 
 from source.common import tsv_to_dataframe
 from source.processing import quick_plot
