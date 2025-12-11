@@ -3,18 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-
-def open_and_print(path):
-    df = pd.read_table(path, header=13)
-    df.rename(columns={"panev X": "X"}, inplace=True)
-    print(df.head())
-
-    quick_plot(df)
-    plt.show()
-
-def quick_plot(df):
+def quick_plot(df, name="", show=False):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
+    plt.title(name)
+
     i = 1
 
     for y in ["X", "Y", "Z"]:
@@ -36,14 +29,5 @@ def quick_plot(df):
         i += 2
     plt.xlabel("Čas (s)")
 
-
-if __name__ == "__main__":
-    if len(sys.argv) >= 2:
-        path = sys.argv[1]
-        open_and_print(path)
-    else:
-        while True:
-            path = input("Vloz cestu na soubor :)\n")
-            open_and_print(path)
-
-
+    if show:
+        plt.show()
