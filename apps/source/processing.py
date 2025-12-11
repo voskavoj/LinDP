@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 def quick_plot(df, name="", show=False):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
-    plt.title(name)
+    plt.suptitle(name)
 
     i = 1
 
