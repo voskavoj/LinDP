@@ -83,3 +83,14 @@ def clean_segment_angles(segments: list) -> list:
                 seg[axis] -= 180  # warning: danger of unintentional flip
 
     return segments
+
+def rolling_average(df: pd.DataFrame) -> pd.DataFrame:
+    rolling_average_window = 5
+
+    return df.rolling(window=rolling_average_window).mean()
+
+def rolling_average_segments(segments: list) -> list:
+    for i in range(len(segments)):
+        segments[i] = rolling_average(segments[i])
+
+    return segments
