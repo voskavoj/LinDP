@@ -77,7 +77,7 @@ def plot_segments_axis(segments, axis, heelstrikes=None, text=False):
                      f"{s['Time'].iloc[-1] - s['Time'].iloc[0]:.0f} s; {abs(s[axis].iloc[-1] - s[axis].iloc[0]):.2f}")
 
 
-def plot_segment_data(segments, heelstrikes=None):
+def plot_segment_data(segments, heelstrikes=None, seg_step_directions=None):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
 
@@ -88,8 +88,10 @@ def plot_segment_data(segments, heelstrikes=None):
         for j, seg in enumerate(segments):
             plt.plot(seg["Time"], seg[y])
             if heelstrikes is not None:
-                for h in heelstrikes[j]:
+                for k, h in enumerate(heelstrikes[j]):
                     plt.plot(seg['Time'].iloc[h], seg[y].iloc[h], "o", color="red")
+                    if seg_step_directions is not None:
+                        plt.text(seg['Time'].iloc[h], seg[y].iloc[h], f"  {seg_step_directions[j][k]}")
         plt.title(y)
         plt.ylabel(f"{y} (mm)")
         i += 2
