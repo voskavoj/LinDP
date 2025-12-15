@@ -1,6 +1,7 @@
 import sys
 
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 
 from apps.source.data_processing import rolling_average, rolling_average_segments
@@ -58,6 +59,9 @@ def open_and_plot(path):
         no_of_half_steps = len(heels - 1)
         step_directions = []
 
+        # get the Segment direction of travel from X axis trend (positive forward)
+        segment_direction = "forward" if np.polyfit(seg["Time"], seg["X"], 1)[0] >= 0 else "backward"
+
         for i in range(no_of_half_steps - 1):
             start, end = heels[i], heels[i + 1]
 
@@ -67,7 +71,7 @@ def open_and_plot(path):
             b = seg["Y"].iloc[start]
             dt = seg['Time'].iloc[start]
 
-            up_or_down = 0
+            cnt_above_below = 0
 
             for i in range(start, end):
                 t, y = seg["Time"].iloc[i], seg["Y"].iloc[i]
@@ -76,27 +80,30 @@ def open_and_plot(path):
                 # plt.plot(t, lin_fit(t, a, b, dt), ".", color="orange")
 
                 if y > lin_fit(t, a, b, dt):
-                    up_or_down += 1
+                    cnt_above_below += 1
                 else:
-                    up_or_down -= 1
+                    cnt_above_below -= 1
 
 
             confidence = 0.75
 
-            if abs(up_or_down) / (end - start) <= confidence:
-                up_or_down = 0
+            # check if we are confident in the direction
+            if abs(cnt_above_below) / (end - start) <= confidence:
+                step_leg = "indefinite"
+            elif cnt_above_below > 0:  # identify half-step leg by counter and overall direction of travel (Y is not flipped, but legs can be)
+                step_leg = "left" if segment_direction == "forward" else "right"
             else:
-                up_or_down = int(up_or_down / abs(up_or_down))  # normalise
+                step_leg = "right" if segment_direction == "forward" else "left"
 
-            colors = ["black", "blue", "green"]
-            plt.plot(seg["Time"].iloc[start:end], seg["Y"].iloc[start:end], color=colors[up_or_down])
+            colors = {"indefinite": "black", "left": "blue", "right": "green"}
+            plt.plot(seg["Time"].iloc[start:end], seg["Y"].iloc[start:end], color=colors[step_leg])
 
-            step_directions.append(up_or_down)
+            step_directions.append(step_leg)
 
-        step_directions.append(0)
+        step_directions.append("indefinite")
         seg_step_directions.append(step_directions)
 
-    # plot_segment_data(segments, heelstrikes, seg_step_directions)
+    plot_segment_data(segments, heelstrikes, seg_step_directions)
 
     # plt.figure()
     # for j, seg in enumerate(segments):

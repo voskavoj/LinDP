@@ -21,7 +21,6 @@ def tsv_to_dataframe(path):
 
     df = pd.read_table(file, header=i, encoding='utf8')
     df.rename(columns={"panev X": "X"}, inplace=True)
-    print(df.head())
 
     return df
 
@@ -90,10 +89,10 @@ def rolling_average(df: pd.DataFrame, window=None) -> pd.DataFrame:
     if window is None:
         window = rolling_average_window
 
-    return df.rolling(window=window).mean()
+    return df.rolling(window=window).mean().dropna()
 
 def rolling_average_segments(segments: list) -> list:
     for i in range(len(segments)):
-        segments[i] = rolling_average(segments[i])
+        segments[i] = rolling_average(segments[i]).dropna()
 
     return segments
