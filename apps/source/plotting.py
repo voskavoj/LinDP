@@ -103,9 +103,10 @@ def plot_segment_data(segments, heelstrikes=None, seg_step_directions=None):
         plt.grid(True, linestyle=':')
         for j, seg in enumerate(segments):
             plt.plot(seg["Time"], seg[y])
-            if heelstrikes is not None:
-                for h in heelstrikes[j]:
-                    plt.plot(seg['Time'].iloc[h], seg[y].iloc[h], "o", color="red")
+            for k, h in enumerate(heelstrikes[j]):
+                plt.plot(seg['Time'].iloc[h], seg[y].iloc[h], "o", color="red")
+                if seg_step_directions is not None:
+                    plt.text(seg['Time'].iloc[h], seg[y].iloc[h], f"  {seg_step_directions[j][k]}")
         plt.title(y)
         plt.ylabel(f"{y} (°)")
         i += 2
