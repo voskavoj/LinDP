@@ -4,30 +4,33 @@ import sys
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from pandas import DataFrame
 from scipy.signal import dfreqresp
 
 from apps.source import steps
-from apps.source.data_processing import rolling_average, rolling_average_segments
+from apps.source.data_processing import rolling_average, rolling_average_segments, normalize_time
 from apps.source.plotting import plot_segments_axis
 from apps.source.steps import find_heelstrikes_from_z, fit_step_with_sine
 from source.data_processing import clean_data, split_data_into_segments, clean_segments, clean_segment_angles
 from source.plotting import plot_segment_data
 from source.data_processing import tsv_to_dataframe
 
+class Segment:
+    def __init__(self, segment_df, ):
+        self.df = segment_df
+        self.heelstrikes = []
+        self.travel_direction = None
+        self.step_legs = None
+
 
 class Step:
-    def __init__(self, df, direction, num=None):
-        self.absolute = df
-        self.relative = self.normalize_time(self.absolute)
+    def __init__(self, df_abs: DataFrame, df_rel: DataFrame, direction: str, number: int):
+        self.df = df_rel  # normalized
+        self.df_rel = self.df  # alias
+        self.df_abs = df_abs
         self.travel_direction = direction
-        self.step_number = num
+        self.step_number = number
 
-    @staticmethod
-    def normalize_time(absolute):
-        normalized = copy.deepcopy(absolute)
-        normalized["Time"] = normalized["Time"] - normalized["Time"].iloc[0]
-        normalized["Time"] = normalized["Time"].round(2)
-        return normalized
 
 def open_and_plot(path):
     df = tsv_to_dataframe(path)
@@ -122,6 +125,7 @@ def open_and_plot(path):
     plot_segment_data(segments, heelstrikes, seg_step_legs)
 
     steps = []
+    step_cnt = 0
     for seg, heels, legs, segment_direction in zip(segments, heelstrikes, seg_step_legs, segment_directions):
         no_of_half_steps = len(heels) - 1
 
@@ -139,7 +143,9 @@ def open_and_plot(path):
                     step_df = (seg.iloc[start:end+1])
                     step_df = step_df.reset_index(drop=True)  # join the steps together and make a new df
 
-                    steps.append(Step(step_df, segment_direction))
+                    step_df_normalized = normalize_time(step_df)
+
+                    steps.append(Step(step_df, step_df_normalized, segment_direction, step_cnt := step_cnt + 1))
 
                     i += 2
                     continue
@@ -149,7 +155,7 @@ def open_and_plot(path):
 
 
     # try to compute average
-    dfs = [step.relative for step in steps]  # your dataframes
+    dfs = [step.df for step in steps]  # your dataframes
 
     # Set Time as index
     dfs = [df.set_index("Time") for df in dfs]
@@ -165,7 +171,7 @@ def open_and_plot(path):
 
     plt.figure()
     for s in steps:
-        plt.plot(s.absolute["Time"], s.absolute["Roll"])
+        plt.plot(s.df_abs["Time"], s.df_abs["Roll"])
 
 
     plt.figure(figsize=(15, 10))
@@ -175,7 +181,7 @@ def open_and_plot(path):
         plt.subplot(3, 1, i)
         plt.grid(True, linestyle=':')
         for step in steps:
-            plt.plot(step.relative["Time"], step.relative[y], color="gray")
+            plt.plot(step.df["Time"], step.df[y], color="gray")
         plt.plot(avg["Time"], avg[y], color="orange")
         plt.title(y)
         plt.ylabel(f"{y} (°)")

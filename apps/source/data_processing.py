@@ -1,3 +1,5 @@
+import copy
+
 import pandas as pd
 from io import StringIO
 
@@ -97,3 +99,9 @@ def rolling_average_segments(segments: list) -> list:
         segments[i]["Time"] = segments[i]["Time"].round(2)
 
     return segments
+
+def normalize_time(df):
+    normalized = copy.deepcopy(df)
+    normalized["Time"] = normalized["Time"] - normalized["Time"].iloc[0]
+    normalized["Time"] = normalized["Time"].round(2)
+    return normalized

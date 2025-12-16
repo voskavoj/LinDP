@@ -16,6 +16,7 @@ def find_heelstrikes_from_z(segments):
     return heelstrikes
 
 
+
 def sine_function(x, A, B, C, D):
     return A * np.sin(B * x + C) + D
 
