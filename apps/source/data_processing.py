@@ -3,8 +3,8 @@ import copy
 import pandas as pd
 from io import StringIO
 
-def tsv_to_dataframe(path):
 
+def tsv_to_dataframe(path):
     # remove diacritics
     with open(path, "r") as file:
         file_content = file.read()
@@ -100,7 +100,7 @@ def rolling_average_segments(segments: list) -> list:
 
     return segments
 
-def normalize_time(df):
+def normalize_time(df: pd.DataFrame) -> pd.DataFrame:
     normalized = copy.deepcopy(df)
     normalized["Time"] = normalized["Time"] - normalized["Time"].iloc[0]
     normalized["Time"] = normalized["Time"].round(2)

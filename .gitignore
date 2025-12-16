@@ -2,3 +2,4 @@
 /test
 /data
 /apps/source/__pycache__
+/apps/__pycache__/*.pyc

@@ -1,21 +1,15 @@
-import copy
 import sys
 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from pandas import DataFrame
-from scipy.signal import dfreqresp
 
-from apps.source import steps
-from apps.source.data_processing import rolling_average, rolling_average_segments, normalize_time
-from apps.source.plotting import plot_segments_axis
-from apps.source.steps import find_heelstrikes_from_z, fit_step_with_sine, Segment, Step
+from source.data_processing import rolling_average_segments, normalize_time
+from source.plotting import plot_segments_axis
+from source.steps import find_heelstrikes_from_z, Segment, Step
 from source.data_processing import clean_data, split_data_into_segments, clean_segments, clean_segment_angles
 from source.plotting import plot_segment_data
 from source.data_processing import tsv_to_dataframe
-
-
 
 
 def open_and_plot(path):
@@ -35,30 +29,6 @@ def open_and_plot(path):
 
     plot_segments_axis(segments, "Time")
     plot_segment_data(segments)
-
-    i = 0
-    # fit_step_with_sine(segments[i], heelstrikes[i])
-
-## identify steps
-
-    # COMPARISON - DOES NOT WORK
-    # seg_step_directions = []
-    # for seg, heels in zip(segments, heelstrikes):
-    #     no_of_half_steps = len(heels - 1)
-    #     step_directions = []
-    #
-    #     for i in range(no_of_half_steps - 1):
-    #         start, end = heels[i], heels[i + 1]
-    #         if seg["Y"].iloc[start] > seg["Y"].iloc[end]:
-    #             step_directions.append(1)
-    #         else:
-    #             step_directions.append(-1)
-    #
-    #     step_directions.append(0)
-    #     seg_step_directions.append(step_directions)
-
-    # plt.figure()
-
 
     # LINEAR FIT
     def lin_fit(x, a, b, dt):
@@ -141,14 +111,9 @@ def open_and_plot(path):
     # Set Time as index
     dfs = [df.set_index("Time") for df in dfs]
 
-    # Concatenate on Time
-    # combined = pd.concat(dfs, axis=1)
-
     # Average across rows (ignores missing values automatically)
     avg = pd.concat(dfs).groupby(level=0).mean().reset_index()
-    print(avg.head())
 
-    # result = avg.reset_index(name="X_avg")
 
     plt.figure()
     for s in steps:
@@ -167,10 +132,6 @@ def open_and_plot(path):
         plt.title(y)
         plt.ylabel(f"{y} (°)")
         i += 1
-
-
-
-
 
 
 if __name__ == "__main__":

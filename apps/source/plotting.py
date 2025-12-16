@@ -1,11 +1,10 @@
-import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 
 from apps.source.steps import Segment
 
 
-def quick_plot(df, name="", show=False):
+def quick_plot(df: pd.DataFrame, name="", show=False):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
     plt.suptitle(name)
@@ -35,7 +34,7 @@ def quick_plot(df, name="", show=False):
         plt.show()
 
 
-def plot_axis(df, axis, show=False):
+def plot_axis(df: pd.DataFrame, axis, show=False):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
 
@@ -48,7 +47,7 @@ def plot_axis(df, axis, show=False):
     if show:
         plt.show()
 
-def plot_all_data(df):
+def plot_all_data(df: pd.DataFrame):
     plt.figure()
     plt.figure(figsize=(15, 1000))
 
