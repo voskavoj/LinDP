@@ -1,3 +1,4 @@
+import copy
 import sys
 
 import numpy as np
@@ -23,8 +24,9 @@ class Step:
 
     @staticmethod
     def normalize_time(absolute):
-        normalized = absolute
+        normalized = copy.deepcopy(absolute)
         normalized["Time"] = normalized["Time"] - normalized["Time"].iloc[0]
+        normalized["Time"] = normalized["Time"].round(2)
         return normalized
 
 def open_and_plot(path):
@@ -38,7 +40,7 @@ def open_and_plot(path):
 
     heelstrikes = find_heelstrikes_from_z(segments)
 
-    # plot_segments_axis(segments, "Z", heelstrikes)
+    plot_segments_axis(segments, "Time", heelstrikes)
     # plot_segment_data(segments, heelstrikes)
 
     i = 0
@@ -160,6 +162,10 @@ def open_and_plot(path):
     print(avg.head())
 
     # result = avg.reset_index(name="X_avg")
+
+    plt.figure()
+    for s in steps:
+        plt.plot(s.absolute["Time"], s.absolute["Roll"])
 
 
     plt.figure(figsize=(15, 10))

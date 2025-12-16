@@ -29,8 +29,6 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df[df.columns[:9]]  # keep only first 9 columns: Frame, Time, 3 trans, 3 rot, Residual
     df = df.dropna()  # drop NaN rows
 
-    df["Time"] = df["Time"] * 1000
-
     return df
 
 
@@ -40,8 +38,8 @@ def split_data_into_segments(df: pd.DataFrame) -> list:
     df['dXdt'] = df['X'].diff() / df['Time'].diff()
 
     # --- Thresholds ---
-    time_threshold = 0.25 * 1000 # adjust to your data
-    deriv_threshold = 4000 /1000  # adjust to your data
+    time_threshold = 0.25 # adjust to your data
+    deriv_threshold = 4000  # adjust to your data
 
     # --- Boolean conditions for starting a new segment ---
     gap_condition = df['time_diff'] > time_threshold
@@ -60,7 +58,7 @@ def split_data_into_segments(df: pd.DataFrame) -> list:
 
 def clean_segments(segments: list) -> list:
     ## KEEP ONLY SEGMENTS SO LONG
-    min_duration = 3.0 * 1000  # seconds
+    min_duration = 3.0  # seconds
     min_distance = 3000  # mm
 
     valid_segments = []
@@ -96,5 +94,6 @@ def rolling_average(df: pd.DataFrame, window=None) -> pd.DataFrame:
 def rolling_average_segments(segments: list) -> list:
     for i in range(len(segments)):
         segments[i] = rolling_average(segments[i]).dropna()
+        segments[i]["Time"] = segments[i]["Time"].round(2)
 
     return segments
