@@ -1,13 +1,20 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from pandas import DataFrame
 
-from apps.source.steps import Segment
+from apps.source.steps import Segment, Step
+
+dataset_name = ""
+
+def set_dataset_name(new_name):
+    global dataset_name
+    dataset_name = f"{new_name}: "
 
 
 def quick_plot(df: pd.DataFrame, name="", show=False):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
-    plt.suptitle(name)
+    plt.suptitle(f"{dataset_name}{name}")
 
     i = 1
 
@@ -40,7 +47,7 @@ def plot_axis(df: pd.DataFrame, axis, show=False):
 
     plt.grid(True, linestyle=':')
     plt.plot(df["Time"], df[axis])
-    plt.title(axis)
+    plt.title(f"{dataset_name} Osa {axis}")
     plt.ylabel(f"{axis} (° or mm)")
     plt.xlabel("Čas (s)")
 
@@ -67,7 +74,7 @@ def plot_all_data(df: pd.DataFrame):
 
 def plot_segments_axis(segments: list[Segment], axis: str, plot_heels=True, text=False):
     plt.figure()
-    plt.title(f"Axis {axis}; No. of segments: {len(segments)}")
+    plt.title(f"{dataset_name}Osa {axis}; Počet segmentů: {len(segments)}")
     for s in segments:
         plt.plot(s['Time'], s[axis], ".-")
         if plot_heels and s.heelstrikes is not None:
@@ -81,6 +88,7 @@ def plot_segments_axis(segments: list[Segment], axis: str, plot_heels=True, text
 def plot_segment_data(segments: list[Segment], plot_heels=True, plot_legs=True):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
+    plt.suptitle(f"{dataset_name}Segmenty")
 
     i = 1
     for y in ["X", "Y", "Z"]:
@@ -112,4 +120,46 @@ def plot_segment_data(segments: list[Segment], plot_heels=True, plot_legs=True):
         plt.title(y)
         plt.ylabel(f"{y} (°)")
         i += 2
+    plt.xlabel("Čas (s)")
+
+
+def plot_average_step(steps: list[Step], average_step: Step):
+    plt.figure(figsize=(15, 10))
+    plt.tight_layout(pad=2)
+    plt.suptitle(f"{dataset_name}Průměrný krok")
+
+    i = 1
+    for y in ["Roll", "Pitch", "Yaw"]:
+        plt.subplot(3, 1, i)
+        plt.grid(True, linestyle=':')
+        for step in steps:
+            plt.plot(step.df["Time"], step.df[y], color="gray", label=f"Step {step.step_number}")
+        plt.plot(average_step["Time"], average_step[y], color="orange")
+        plt.title(y)
+        plt.ylabel(f"{y} (°)")
+        i += 1
+
+    plt.legend()
+
+
+def plot_valid_steps(all_data: DataFrame, steps: list[Step], plot_numbers=True):
+    plt.figure(figsize=(15, 10))
+    plt.tight_layout(pad=2)
+    plt.suptitle(f"{dataset_name}Data vs. validní kroky")
+
+    i = 0
+    for y in ["X", "Roll", "Y", "Pitch", "Z", "Yaw"]:
+        plt.subplot(3, 2, i := i + 1)
+        plt.grid(True, linestyle=':')
+
+        plt.plot(all_data["Time"], all_data[y])
+        for step in steps:
+            plt.plot(step.df_abs["Time"], step.df_abs[y], color="orange", label=f"Step {step.step_number}")
+            plt.plot(step.df_abs["Time"].iloc[0], step.df_abs[y].iloc[0], "o", color="red")
+            if plot_numbers:
+                plt.text(step.df_abs["Time"].iloc[0], step.df_abs[y].iloc[0], f"{step.step_number}:")
+            plt.plot(step.df_abs["Time"].iloc[-1], step.df_abs[y].iloc[-1], "o", color="red")
+
+        plt.title(y)
+        plt.ylabel(f"{y} ({'°' if y in ["Roll", "Pitch", "Yaw"] else 'mm'})")
     plt.xlabel("Čas (s)")

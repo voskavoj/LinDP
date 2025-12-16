@@ -1,10 +1,30 @@
 import copy
 
+from datetime import datetime
 import pandas as pd
 from io import StringIO
 
+from apps.source.parameters import Parameters
 
-def tsv_to_dataframe(path):
+
+class Dataset:
+    def __init__(self, name, metadata, data, segments, steps, average_step):
+        self.name = name
+        self.metadata = metadata
+        self.date_of_processing = datetime.now()
+
+        self.data = data
+        self.segments = segments
+        self.steps = steps
+        self.average_step = average_step
+
+        self.no_of_segments = len(segments)
+        self.no_of_steps = len(steps)
+        self.parameters = Parameters()
+
+
+
+def tsv_to_dataframe(path, return_metadata=False):
     # remove diacritics
     with open(path, "r") as file:
         file_content = file.read()
@@ -13,10 +33,12 @@ def tsv_to_dataframe(path):
         file = StringIO(file_content)
 
     # find header row
+    metadata = ""
     file_lines = file_content.split("\n")
     i = 0
     for line in file_lines:
         if line.startswith("Frame"):
+            metadata += line + "\n"
             break
         else:
             i += 1
@@ -24,7 +46,10 @@ def tsv_to_dataframe(path):
     df = pd.read_table(file, header=i, encoding='utf8')
     df.rename(columns={"panev X": "X"}, inplace=True)
 
-    return df
+    if return_metadata:
+        return df, metadata
+    else:
+        return df
 
 
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:

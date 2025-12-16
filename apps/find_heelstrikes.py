@@ -1,19 +1,20 @@
+import pickle
 import sys
 
-import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 
-from source.data_processing import rolling_average_segments, normalize_time
-from source.plotting import plot_segments_axis
+from apps.source.plotting import plot_average_step, plot_valid_steps, set_dataset_name
+from apps.source.steps import identify_segment_travel_direction, identify_segment_step_legs, \
+    extract_steps_from_segments, compute_average_step
+from source.data_processing import rolling_average_segments, Dataset
 from source.steps import find_heelstrikes_from_z, Segment, Step
 from source.data_processing import clean_data, split_data_into_segments, clean_segments, clean_segment_angles
 from source.plotting import plot_segment_data
 from source.data_processing import tsv_to_dataframe
 
 
-def open_and_plot(path):
-    df = tsv_to_dataframe(path)
+def process_data(path):
+    df, metadata = tsv_to_dataframe(path, return_metadata=True)
     df = clean_data(df)
 
     segments = split_data_into_segments(df)
@@ -24,114 +25,22 @@ def open_and_plot(path):
     segments = [Segment(s) for s in segments]
 
     for seg in segments:
-        heelstrikes = find_heelstrikes_from_z(seg.df)
-        seg.heelstrikes = heelstrikes
-
-    plot_segments_axis(segments, "Time")
-    plot_segment_data(segments)
-
-    # LINEAR FIT
-    def lin_fit(x, a, b, dt):
-        return a * (x - dt) + b
-
-    for seg in segments:
-        no_of_half_steps = len(seg.heelstrikes) - 1
-        step_legs = []
-
-        # get the Segment direction of travel from X axis trend (positive forward)
-        seg.travel_direction = "forward" if np.polyfit(seg["Time"], seg["X"], 1)[0] >= 0 else "backward"
-
-        for i in range(no_of_half_steps):
-            start, end = seg.heelstrikes[i], seg.heelstrikes[i + 1]
-
-            half_step_duration = seg['Time'].iloc[end] - seg['Time'].iloc[start]
-            half_step_distance = seg["Y"].iloc[end] - seg["Y"].iloc[start]
-            a = half_step_distance / half_step_duration
-            b = seg["Y"].iloc[start]
-            dt = seg['Time'].iloc[start]
-
-            cnt_above_below = 0
-            for j in range(start, end):
-                t, y = seg["Time"].iloc[j], seg["Y"].iloc[j]
-
-                if y > lin_fit(t, a, b, dt):
-                    cnt_above_below += 1
-                else:
-                    cnt_above_below -= 1
-
-            confidence = 0.75
-            # check if we are confident in the direction
-            if abs(cnt_above_below) / (end - start) <= confidence:
-                step_leg = "indefinite"
-            elif cnt_above_below > 0:  # identify half-step leg by counter and overall direction of travel (Y is not flipped, but legs can be)
-                step_leg = "left" if seg.travel_direction == "forward" else "right"
-            else:
-                step_leg = "right" if seg.travel_direction == "forward" else "left"
-
-            step_legs.append(step_leg)
-
-        step_legs.append("indefinite")
-        seg.step_legs = step_legs
+        seg.heelstrikes = find_heelstrikes_from_z(seg.df)
+        seg.travel_direction = identify_segment_travel_direction(seg)
+        seg.step_legs = identify_segment_step_legs(seg)
 
     plot_segment_data(segments)
 
-    steps = []
-    step_cnt = 0
-    for seg in segments:
-        no_of_half_steps = len(seg.heelstrikes) - 1
-
-        i = 0
-        while True:  # let's go with RIGHT as the starting foot
-            if i >= no_of_half_steps:
-                break
-
-            if not seg.step_legs[i] == "right":
-                i += 1
-                continue
-            else:  # we have a right foot
-                if seg.step_legs[i + 1] == "left":  # if next step is left, join them together and skip one iteration
-                    start, end = seg.heelstrikes[i], seg.heelstrikes[i + 2]
-                    step_df = (seg.df.iloc[start:end+1])
-                    step_df = step_df.reset_index(drop=True)  # join the steps together and make a new df
-
-                    step_df_normalized = normalize_time(step_df)
-
-                    steps.append(Step(step_df, step_df_normalized, seg.travel_direction, step_cnt := step_cnt + 1))
-
-                    i += 2
-                    continue
-                else:  # next step is right again or indefinite
-                    i += 1
-                    continue
+    steps = extract_steps_from_segments(segments)
+    average_step = compute_average_step(steps)
 
 
-    # try to compute average
-    dfs = [step.df for step in steps]  # your dataframes
+    plot_average_step(steps, average_step)
 
-    # Set Time as index
-    dfs = [df.set_index("Time") for df in dfs]
+    plot_valid_steps(df, steps)
 
-    # Average across rows (ignores missing values automatically)
-    avg = pd.concat(dfs).groupby(level=0).mean().reset_index()
-
-
-    plt.figure()
-    for s in steps:
-        plt.plot(s.df_abs["Time"], s.df_abs["Roll"])
-
-
-    plt.figure(figsize=(15, 10))
-    plt.tight_layout(pad=2)
-    i = 1
-    for y in ["Roll", "Pitch", "Yaw"]:
-        plt.subplot(3, 1, i)
-        plt.grid(True, linestyle=':')
-        for step in steps:
-            plt.plot(step.df["Time"], step.df[y], color="gray")
-        plt.plot(avg["Time"], avg[y], color="orange")
-        plt.title(y)
-        plt.ylabel(f"{y} (°)")
-        i += 1
+    dataset = Dataset(path, metadata, df, segments, steps, average_step)
+    return dataset
 
 
 if __name__ == "__main__":
@@ -144,7 +53,12 @@ if __name__ == "__main__":
     #         open_and_plot(path)
 
     for name in ["eli", "ani", "anna"]:
-        open_and_plot(f"../data/{name}_6D.tsv")
+        set_dataset_name(name)
+        processed_data = process_data(f"../data/{name}_6D.tsv")
+        processed_data.name = name
+
+        with open(f"../data/{name}.pickle", "wb") as f:
+            pickle.dump(processed_data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     plt.show()
 

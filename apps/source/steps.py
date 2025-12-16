@@ -1,6 +1,9 @@
 import numpy as np
+import pandas as pd
 from pandas import DataFrame
 from scipy.signal import argrelextrema
+
+from apps.source.data_processing import normalize_time
 
 
 class Segment:
@@ -34,3 +37,94 @@ def find_heelstrikes_from_z(df: DataFrame):
     neighbors = 15
 
     return argrelextrema(df["Z"].values, np.less, order=neighbors)[0]      # np.less for minima
+
+
+def lin_fit(x, a, b, dt):
+    return a * (x - dt) + b
+
+
+def identify_segment_travel_direction(seg: Segment):
+    return "forward" if np.polyfit(seg["Time"], seg["X"], 1)[0] >= 0 else "backward"
+
+
+def identify_segment_step_legs(seg: Segment):
+        no_of_half_steps = len(seg.heelstrikes) - 1
+        step_legs = []
+
+        for i in range(no_of_half_steps):
+            start, end = seg.heelstrikes[i], seg.heelstrikes[i + 1]
+
+            half_step_duration = seg['Time'].iloc[end] - seg['Time'].iloc[start]
+            half_step_distance = seg["Y"].iloc[end] - seg["Y"].iloc[start]
+            a = half_step_distance / half_step_duration
+            b = seg["Y"].iloc[start]
+            dt = seg['Time'].iloc[start]
+
+            cnt_above_below = 0
+            for j in range(start, end):
+                t, y = seg["Time"].iloc[j], seg["Y"].iloc[j]
+
+                if y > lin_fit(t, a, b, dt):
+                    cnt_above_below += 1
+                else:
+                    cnt_above_below -= 1
+
+            confidence = 0.75
+            # check if we are confident in the direction
+            if abs(cnt_above_below) / (end - start) <= confidence:
+                step_leg = "indefinite"
+            elif cnt_above_below > 0:  # identify half-step leg by counter and overall direction of travel (Y is not flipped, but legs can be)
+                step_leg = "left" if seg.travel_direction == "forward" else "right"
+            else:
+                step_leg = "right" if seg.travel_direction == "forward" else "left"
+
+            step_legs.append(step_leg)
+
+        step_legs.append("indefinite")
+        return step_legs
+
+def extract_steps_from_segments(segments: list[Segment]) -> list[Step]:
+    steps, step_cnt = [], 0
+
+    for seg in segments:
+        no_of_half_steps = len(seg.heelstrikes) - 1
+
+        i = 0
+        while True:  # let's go with RIGHT as the starting foot
+            if i >= no_of_half_steps:
+                break
+
+            if not seg.step_legs[i] == "right":
+                i += 1
+                continue
+            else:  # we have a right foot
+                if seg.step_legs[i + 1] == "left":  # if next step is left, join them together and skip one iteration
+                    start, end = seg.heelstrikes[i], seg.heelstrikes[i + 2]
+                    step_df = (seg.df.iloc[start:end + 1])
+                    step_df = step_df.reset_index(drop=True)  # join the steps together and make a new df
+
+                    step_df_normalized = normalize_time(step_df)
+
+                    steps.append(Step(step_df, step_df_normalized, seg.travel_direction, step_cnt := step_cnt + 1))
+
+                    i += 2
+                    continue
+                else:  # next step is right again or indefinite
+                    i += 1
+                    continue
+
+    return steps
+
+def compute_average_step(steps: list[Step]) -> Step:
+    # try to compute average
+    dfs = [step.df for step in steps]  # your dataframes
+
+    # Set Time as index
+    dfs = [df.set_index("Time") for df in dfs]
+
+    # Average across rows (ignores missing values automatically)
+    avg = pd.concat(dfs).groupby(level=0).mean().reset_index()
+
+    return Step(avg, avg, "", len(steps))
+
+
