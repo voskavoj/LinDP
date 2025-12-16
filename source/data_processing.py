@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 from io import StringIO
 
-from apps.source.parameters import Parameters
+from source.parameters import Parameters
 
 
 class Dataset:

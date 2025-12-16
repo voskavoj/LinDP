@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 
-from apps.source.steps import Segment, Step
+from source.steps import Segment, Step
 
 dataset_name = ""
 

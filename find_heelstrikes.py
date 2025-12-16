@@ -3,8 +3,8 @@ import sys
 
 from matplotlib import pyplot as plt
 
-from apps.source.plotting import plot_average_step, plot_valid_steps, set_dataset_name
-from apps.source.steps import identify_segment_travel_direction, identify_segment_step_legs, \
+from source.plotting import plot_average_step, plot_valid_steps, set_dataset_name
+from source.steps import identify_segment_travel_direction, identify_segment_step_legs, \
     extract_steps_from_segments, compute_average_step
 from source.data_processing import rolling_average_segments, Dataset
 from source.steps import find_heelstrikes_from_z, Segment, Step

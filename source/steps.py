@@ -3,7 +3,7 @@ import pandas as pd
 from pandas import DataFrame
 from scipy.signal import argrelextrema
 
-from apps.source.data_processing import normalize_time
+from source.data_processing import normalize_time
 
 
 class Segment:
