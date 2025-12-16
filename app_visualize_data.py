@@ -2,7 +2,7 @@ import sys
 
 from matplotlib import pyplot as plt
 
-from find_heelstrikes import process_data
+from app_find_heelstrikes import process_data
 
 
 if __name__ == "__main__":
