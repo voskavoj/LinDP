@@ -34,28 +34,21 @@ def process_data(path):
 
     plot_valid_steps(df, steps)
     plot_average_step(steps, average_step)
+    plot_segment_data(segments)
 
     dataset = Dataset(path, metadata, df, segments, steps, average_step)
 
-    print(dataset.no_of_steps)
     return dataset
 
 
 if __name__ == "__main__":
-    # if len(sys.argv) >= 2:
-    #     path = sys.argv[1]
-    #     open_and_plot(path)
-    # else:
-    #     while True:
-    #         path = input("Vloz cestu na soubor :)\n")
-    #         open_and_plot(path)
 
     for name in ["eli", "ani", "anna"]:
         set_dataset_name(name)
-        processed_data = process_data(f"../data/{name}_6D.tsv")
+        processed_data = process_data(f"data/{name}_6D.tsv")
         processed_data.name = name
 
-        with open(f"../data/{name}.pickle", "wb") as f:
+        with open(f"data/{name}.pickle", "wb") as f:
             pickle.dump(processed_data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     plt.show()

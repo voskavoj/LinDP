@@ -88,7 +88,7 @@ def plot_segments_axis(segments: list[Segment], axis: str, plot_heels=True, text
 def plot_segment_data(segments: list[Segment], plot_heels=True, plot_legs=True):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
-    plt.suptitle(f"{dataset_name}Segmenty")
+    plt.suptitle(f"{dataset_name}Segmenty ({len(segments)}x)")
 
     i = 1
     for y in ["X", "Y", "Z"]:
