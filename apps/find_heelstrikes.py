@@ -10,26 +10,12 @@ from scipy.signal import dfreqresp
 from apps.source import steps
 from apps.source.data_processing import rolling_average, rolling_average_segments, normalize_time
 from apps.source.plotting import plot_segments_axis
-from apps.source.steps import find_heelstrikes_from_z, fit_step_with_sine
+from apps.source.steps import find_heelstrikes_from_z, fit_step_with_sine, Segment, Step
 from source.data_processing import clean_data, split_data_into_segments, clean_segments, clean_segment_angles
 from source.plotting import plot_segment_data
 from source.data_processing import tsv_to_dataframe
 
-class Segment:
-    def __init__(self, segment_df, ):
-        self.df = segment_df
-        self.heelstrikes = []
-        self.travel_direction = None
-        self.step_legs = None
 
-
-class Step:
-    def __init__(self, df_abs: DataFrame, df_rel: DataFrame, direction: str, number: int):
-        self.df = df_rel  # normalized
-        self.df_rel = self.df  # alias
-        self.df_abs = df_abs
-        self.travel_direction = direction
-        self.step_number = number
 
 
 def open_and_plot(path):
@@ -41,10 +27,14 @@ def open_and_plot(path):
     segments = clean_segment_angles(segments)
     segments = rolling_average_segments(segments)
 
-    heelstrikes = find_heelstrikes_from_z(segments)
+    segments = [Segment(s) for s in segments]
 
-    plot_segments_axis(segments, "Time", heelstrikes)
-    # plot_segment_data(segments, heelstrikes)
+    for seg in segments:
+        heelstrikes = find_heelstrikes_from_z(seg.df)
+        seg.heelstrikes = heelstrikes
+
+    plot_segments_axis(segments, "Time")
+    plot_segment_data(segments)
 
     i = 0
     # fit_step_with_sine(segments[i], heelstrikes[i])
@@ -74,18 +64,15 @@ def open_and_plot(path):
     def lin_fit(x, a, b, dt):
         return a * (x - dt) + b
 
-    seg_step_legs = []
-    segment_directions = []
-    for seg, heels in zip(segments, heelstrikes):
-        no_of_half_steps = len(heels) - 1
+    for seg in segments:
+        no_of_half_steps = len(seg.heelstrikes) - 1
         step_legs = []
 
         # get the Segment direction of travel from X axis trend (positive forward)
-        segment_direction = "forward" if np.polyfit(seg["Time"], seg["X"], 1)[0] >= 0 else "backward"
-        segment_directions.append(segment_direction)
+        seg.travel_direction = "forward" if np.polyfit(seg["Time"], seg["X"], 1)[0] >= 0 else "backward"
 
         for i in range(no_of_half_steps):
-            start, end = heels[i], heels[i + 1]
+            start, end = seg.heelstrikes[i], seg.heelstrikes[i + 1]
 
             half_step_duration = seg['Time'].iloc[end] - seg['Time'].iloc[start]
             half_step_distance = seg["Y"].iloc[end] - seg["Y"].iloc[start]
@@ -94,7 +81,6 @@ def open_and_plot(path):
             dt = seg['Time'].iloc[start]
 
             cnt_above_below = 0
-
             for j in range(start, end):
                 t, y = seg["Time"].iloc[j], seg["Y"].iloc[j]
 
@@ -103,49 +89,44 @@ def open_and_plot(path):
                 else:
                     cnt_above_below -= 1
 
-
             confidence = 0.75
-
             # check if we are confident in the direction
             if abs(cnt_above_below) / (end - start) <= confidence:
                 step_leg = "indefinite"
             elif cnt_above_below > 0:  # identify half-step leg by counter and overall direction of travel (Y is not flipped, but legs can be)
-                step_leg = "left" if segment_direction == "forward" else "right"
+                step_leg = "left" if seg.travel_direction == "forward" else "right"
             else:
-                step_leg = "right" if segment_direction == "forward" else "left"
-
-            # colors = {"indefinite": "black", "left": "blue", "right": "green"}
-            # plt.plot(seg["Time"].iloc[start:end], seg["Y"].iloc[start:end], color=colors[step_leg])
+                step_leg = "right" if seg.travel_direction == "forward" else "left"
 
             step_legs.append(step_leg)
 
         step_legs.append("indefinite")
-        seg_step_legs.append(step_legs)
+        seg.step_legs = step_legs
 
-    plot_segment_data(segments, heelstrikes, seg_step_legs)
+    plot_segment_data(segments)
 
     steps = []
     step_cnt = 0
-    for seg, heels, legs, segment_direction in zip(segments, heelstrikes, seg_step_legs, segment_directions):
-        no_of_half_steps = len(heels) - 1
+    for seg in segments:
+        no_of_half_steps = len(seg.heelstrikes) - 1
 
         i = 0
         while True:  # let's go with RIGHT as the starting foot
             if i >= no_of_half_steps:
                 break
 
-            if not legs[i] == "right":
+            if not seg.step_legs[i] == "right":
                 i += 1
                 continue
             else:  # we have a right foot
-                if legs[i + 1] == "left":  # if next step is left, join them together and skip one iteration
-                    start, end = heels[i], heels[i + 2]
-                    step_df = (seg.iloc[start:end+1])
+                if seg.step_legs[i + 1] == "left":  # if next step is left, join them together and skip one iteration
+                    start, end = seg.heelstrikes[i], seg.heelstrikes[i + 2]
+                    step_df = (seg.df.iloc[start:end+1])
                     step_df = step_df.reset_index(drop=True)  # join the steps together and make a new df
 
                     step_df_normalized = normalize_time(step_df)
 
-                    steps.append(Step(step_df, step_df_normalized, segment_direction, step_cnt := step_cnt + 1))
+                    steps.append(Step(step_df, step_df_normalized, seg.travel_direction, step_cnt := step_cnt + 1))
 
                     i += 2
                     continue
