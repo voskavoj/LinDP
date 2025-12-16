@@ -29,17 +29,15 @@ def process_data(path):
         seg.travel_direction = identify_segment_travel_direction(seg)
         seg.step_legs = identify_segment_step_legs(seg)
 
-    plot_segment_data(segments)
-
     steps = extract_steps_from_segments(segments)
-    average_step = compute_average_step(steps)
-
-
-    plot_average_step(steps, average_step)
+    average_step = compute_average_step(steps, crop_to_shortest=True)
 
     plot_valid_steps(df, steps)
+    plot_average_step(steps, average_step)
 
     dataset = Dataset(path, metadata, df, segments, steps, average_step)
+
+    print(dataset.no_of_steps)
     return dataset
 
 

@@ -115,12 +115,18 @@ def extract_steps_from_segments(segments: list[Segment]) -> list[Step]:
 
     return steps
 
-def compute_average_step(steps: list[Step]) -> Step:
+def compute_average_step(steps: list[Step], crop_to_shortest=False) -> Step:
     # try to compute average
-    dfs = [step.df for step in steps]  # your dataframes
+    dfs = [step.df for step in steps]  # dataframes
 
     # Set Time as index
     dfs = [df.set_index("Time") for df in dfs]
+
+    if crop_to_shortest:
+        common_index = dfs[0].index
+        for df in dfs[1:]:
+            common_index = common_index.intersection(df.index)
+        dfs = [df.loc[common_index] for df in dfs]
 
     # Average across rows (ignores missing values automatically)
     avg = pd.concat(dfs).groupby(level=0).mean().reset_index()

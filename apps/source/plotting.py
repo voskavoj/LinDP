@@ -139,13 +139,11 @@ def plot_average_step(steps: list[Step], average_step: Step):
         plt.ylabel(f"{y} (°)")
         i += 1
 
-    plt.legend()
-
 
 def plot_valid_steps(all_data: DataFrame, steps: list[Step], plot_numbers=True):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
-    plt.suptitle(f"{dataset_name}Data vs. validní kroky")
+    plt.suptitle(f"{dataset_name}Data vs. validní kroky ({len(steps)} kroků)")
 
     i = 0
     for y in ["X", "Roll", "Y", "Pitch", "Z", "Yaw"]:

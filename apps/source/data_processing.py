@@ -23,7 +23,6 @@ class Dataset:
         self.parameters = Parameters()
 
 
-
 def tsv_to_dataframe(path, return_metadata=False):
     # remove diacritics
     with open(path, "r") as file:
