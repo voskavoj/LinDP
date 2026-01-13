@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from source.plotting import plot_average_step, plot_valid_steps, set_dataset_name
 from source.steps import identify_segment_travel_direction, identify_segment_step_legs, \
     extract_steps_from_segments, compute_average_step
-from source.data_processing import rolling_average_segments, Dataset
+from source.data_processing import rolling_average_segments, OneMeasSteps
 from source.steps import find_heelstrikes_from_z, Segment, Step
 from source.data_processing import clean_data, split_data_into_segments, clean_segments, clean_segment_angles
 from source.plotting import plot_segment_data
@@ -36,9 +36,9 @@ def process_data(path):
     plot_average_step(steps, average_step)
     plot_segment_data(segments)
 
-    dataset = Dataset(path, metadata, df, segments, steps, average_step)
+    one_measurement_steps = OneMeasSteps(path, metadata, df, segments, steps, average_step)
 
-    return dataset
+    return one_measurement_steps
 
 
 if __name__ == "__main__":

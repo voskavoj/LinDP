@@ -7,7 +7,7 @@ from io import StringIO
 from source.parameters import Parameters
 
 
-class Dataset:
+class OneMeasSteps:
     def __init__(self, name, metadata, data, segments, steps, average_step):
         self.name = name
         self.metadata = metadata
