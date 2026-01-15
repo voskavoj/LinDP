@@ -43,10 +43,19 @@ def process_data(path):
 
 if __name__ == "__main__":
 
-    for name in ["eli", "ani", "anna"]:
+    data = [
+
+    ]
+
+
+    for filename in data:
+        name = filename.replace("_6D.tsv", "")
+
         set_dataset_name(name)
-        processed_data = process_data(f"data/{name}_6D.tsv")
+        processed_data = process_data(f"data/{filename}")
         processed_data.name = name
+
+        print(f"Processing data {name}\tValid steps found: {processed_data.no_of_steps}")
 
         with open(f"data/{name}.pickle", "wb") as f:
             pickle.dump(processed_data, f, protocol=pickle.HIGHEST_PROTOCOL)
