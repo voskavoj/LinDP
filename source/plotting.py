@@ -134,11 +134,11 @@ def plot_average_step(steps: list[Step], average_step: Step, dropped_steps=None)
     for y in ["Roll", "Pitch", "Yaw"]:
         plt.subplot(3, 1, i)
         plt.grid(True, linestyle=':')
-        for step in steps:
-            plt.plot(step.df["Time"], step.df[y], color="gray", label=f"Step {step.step_number}")
-        plt.plot(average_step["Time"], average_step[y], color="orange")
         for step in dropped_steps:
-            plt.plot(step.df["Time"], step.df[y], color="darkred", label=f"Step {step.step_number}")
+            plt.plot(step.df["Time"], step.df[y], ".-", color="lightgray", label=f"Step {step.step_number}")
+        for step in steps:
+            plt.plot(step.df["Time"], step.df[y], ".-", color="darkgreen" if dropped_steps else "gray", label=f"Step {step.step_number}")
+        plt.plot(average_step["Time"], average_step[y], ".-", color="orange")
         plt.title(y)
         plt.ylabel(f"{y} (°)")
         i += 1

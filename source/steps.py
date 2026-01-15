@@ -115,9 +115,36 @@ def extract_steps_from_segments(segments: list[Segment]) -> list[Step]:
 
     return steps
 
+def interpolate_df(df: DataFrame):
+    # Set Time as index
+    df = df.set_index("Time")
+
+    # Create a full 10 ms time index
+    full_time_index = np.arange(
+        df.index.min(),
+        df.index.max() + 0.01,
+        0.01
+    )
+
+    # Reindex to include missing timestamps
+    df = df.reindex(full_time_index)
+
+    # Interpolate linearly
+    df_interpolated = df.interpolate(
+        method="linear",
+        limit_direction="both"
+    )
+
+    # Restore Time column
+    df_interpolated = df_interpolated.reset_index().rename(
+        columns={"index": "Time"}
+    )
+
+    return df_interpolated
+
 def compute_average_step(steps: list[Step], crop_to_shortest=False) -> Step:
     # try to compute average
-    dfs = [step.df for step in steps]  # dataframes
+    dfs = [interpolate_df(step.df) for step in steps]  # dataframes
 
     # Set Time as index
     dfs = [df.set_index("Time") for df in dfs]
