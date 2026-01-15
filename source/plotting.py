@@ -123,10 +123,12 @@ def plot_segment_data(segments: list[Segment], plot_heels=True, plot_legs=True):
     plt.xlabel("Čas (s)")
 
 
-def plot_average_step(steps: list[Step], average_step: Step):
+def plot_average_step(steps: list[Step], average_step: Step, dropped_steps=None):
+    if dropped_steps is None:
+        dropped_steps = []
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
-    plt.suptitle(f"{dataset_name}Průměrný krok")
+    plt.suptitle(f"{dataset_name}Průměrný krok (ze {len(steps)})")
 
     i = 1
     for y in ["Roll", "Pitch", "Yaw"]:
@@ -135,6 +137,8 @@ def plot_average_step(steps: list[Step], average_step: Step):
         for step in steps:
             plt.plot(step.df["Time"], step.df[y], color="gray", label=f"Step {step.step_number}")
         plt.plot(average_step["Time"], average_step[y], color="orange")
+        for step in dropped_steps:
+            plt.plot(step.df["Time"], step.df[y], color="darkred", label=f"Step {step.step_number}")
         plt.title(y)
         plt.ylabel(f"{y} (°)")
         i += 1
