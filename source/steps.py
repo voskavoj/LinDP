@@ -212,3 +212,38 @@ def filter_out_steps_by_density(steps: list[Step], density_threshold: float) -> 
             dropped_steps.append(step)
 
     return kept_steps, dropped_steps
+
+
+def auto_filter_steps(steps: list[Step], log_name=""):
+    kept_steps, dropped_steps = list(), list()
+
+    threshold_density = 80
+    threshold_deriv_r = 80
+    threshold_deriv_p = 60
+    threshold_deriv_y = 110
+    threshold_deriv_as_frac_of_avg = 1.3
+
+    # filter by density
+    kept_steps, dropped_steps_d = filter_out_steps_by_density(steps, threshold_density)
+    dropped_steps.extend(dropped_steps_d)
+
+    # filter by derivation
+    avg_deriv_r, avg_deriv_p, avg_deriv_y = calculate_average_maximum_derivation(steps)
+
+    kept_steps, dropped_steps_r = filter_out_steps_by_derivation(kept_steps, "Roll", max(threshold_deriv_r,
+                                                                                         avg_deriv_r * threshold_deriv_as_frac_of_avg))
+    kept_steps, dropped_steps_p = filter_out_steps_by_derivation(kept_steps, "Pitch", max(threshold_deriv_p,
+                                                                                          avg_deriv_p * threshold_deriv_as_frac_of_avg))
+    kept_steps, dropped_steps_y = filter_out_steps_by_derivation(kept_steps, "Yaw", max(threshold_deriv_y,
+                                                                                        avg_deriv_y * threshold_deriv_as_frac_of_avg))
+    dropped_steps.extend([*dropped_steps_r, *dropped_steps_p, *dropped_steps_y])
+
+    # report statistics
+    if log_name:
+        d, r, p, y = len(dropped_steps_d), len(dropped_steps_r), len(dropped_steps_p), len(dropped_steps_y)
+        col = '\033[93m' if len(kept_steps) / len(steps) < 0.8 else ""  # '\033[92m'
+        print(
+            col + f"{log_name}:\t{len(kept_steps):02.0f}/{len(steps):02.0f} ({round(100 * len(kept_steps) / len(steps)):03.0f}%) D:{d} R:{r} P:{p} Y:{y} | average r: {round(avg_deriv_r)} p: {round(avg_deriv_p)} y: {round(avg_deriv_y)}" + '\033[0m')
+
+    return kept_steps, dropped_steps
+
