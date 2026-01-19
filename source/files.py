@@ -21,3 +21,8 @@ def get_all_files_in_directory(directory, filter_extensions=None):
         files = [f for f in files if f.endswith(filter_extensions)]
 
     return files
+
+def save_as_txt(lines, base_path: str, filename: str):
+    with open(f"{base_path}{"/" if base_path.endswith("/") or base_path.endswith("\\") else ""}{filename}.txt", "w") as f:
+        for line in lines:
+            f.write(line + "\n")

@@ -29,4 +29,5 @@ if __name__ == "__main__":
                 for d in dataset:
                     print("\t", d.name)
                 save_with_pickle(dataset, "data/datasets/", f"dataset_{h}_{m}_{b}")
+    save_with_pickle(all_data, "data/datasets/", f"dataset_dict")
 
