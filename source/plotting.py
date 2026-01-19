@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pandas import DataFrame
@@ -128,7 +129,7 @@ def plot_average_step(steps: list[Step], average_step: Step, dropped_steps=None)
         dropped_steps = []
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
-    plt.suptitle(f"{dataset_name}Průměrný krok (ze {len(steps)})")
+    plt.suptitle(f"{dataset_name}Průměrný krok (ze {len(steps)})" + f" ({len(dropped_steps)} vyřazeno)" if dropped_steps is not None else "")
 
     i = 1
     for y in ["Roll", "Pitch", "Yaw"]:
@@ -137,11 +138,12 @@ def plot_average_step(steps: list[Step], average_step: Step, dropped_steps=None)
         for step in dropped_steps:
             plt.plot(step.df["Time"], step.df[y], ".-", color="lightgray", label=f"Step {step.step_number}")
         for step in steps:
-            plt.plot(step.df["Time"], step.df[y], ".-", color="darkgreen" if dropped_steps else "gray", label=f"Step {step.step_number}")
+            plt.plot(step.df["Time"], step.df[y], ".-", color="darkgreen" if dropped_steps is not None else "gray", label=f"Step {step.step_number}")
         plt.plot(average_step["Time"], average_step[y], ".-", color="orange")
         plt.title(y)
         plt.ylabel(f"{y} (°)")
         i += 1
+    plt.legend()
 
 
 def plot_valid_steps(all_data: DataFrame, steps: list[Step], plot_numbers=True):
@@ -165,3 +167,58 @@ def plot_valid_steps(all_data: DataFrame, steps: list[Step], plot_numbers=True):
         plt.title(y)
         plt.ylabel(f"{y} ({'°' if y in ["Roll", "Pitch", "Yaw"] else 'mm'})")
     plt.xlabel("Čas (s)")
+
+
+def plot_most_deviant_step(steps: list[Step]):
+    plt.figure(figsize=(15, 10))
+    plt.tight_layout(pad=2)
+    plt.suptitle(f"{dataset_name}Most devaint steps")
+
+    i = 1
+    for y in ["Roll", "Pitch", "Yaw"]:
+        max_dev, max_dev_idx = 0, 0
+        for j, step in enumerate(steps):
+            dxtx = step.df[y].diff() / step.df['Time'].diff()
+
+            if np.max(dxtx.abs()) >= max_dev:
+                max_dev = np.max(dxtx.abs())
+                max_dev_idx = j
+
+        plt.subplot(3, 1, i)
+        plt.grid(True, linestyle=':')
+        for step in steps:
+            plt.plot(step.df["Time"], step.df[y], ".-", color="gray", label="__nolabel__")
+        plt.plot(steps[max_dev_idx].df["Time"], steps[max_dev_idx].df[y], ".-", label=f"{max_dev}")
+        plt.title(y)
+        plt.ylabel(f"{y} (°)")
+        i += 1
+        plt.legend()
+
+    # plt.savefig(f"data/img/{dataset_name.replace(":","")}Most deviant steps.png")
+
+def plot_lowest_density_step(steps: list[Step]):
+    plt.figure(figsize=(15, 10))
+    plt.tight_layout(pad=2)
+    plt.suptitle(f"{dataset_name}Lowest density steps")
+
+    min_den, min_den_idx = 100, 0
+    for j, step in enumerate(steps):
+        density =  step.df.shape[0] / (step.df["Time"].iloc[-1] - step.df["Time"].iloc[0])
+
+        if density <= min_den:
+            min_den = density
+            min_den_idx = j
+
+    i = 1
+    for y in ["Roll", "Pitch", "Yaw"]:
+        plt.subplot(3, 1, i)
+        plt.grid(True, linestyle=':')
+        for step in steps:
+            plt.plot(step.df["Time"], step.df[y], ".-", color="gray", label="__nolabel__")
+        plt.plot(steps[min_den_idx].df["Time"], steps[min_den_idx].df[y], ".-", label=f"{min_den}")
+        plt.title(y)
+        plt.ylabel(f"{y} (°)")
+        i += 1
+        plt.legend()
+
+    # plt.savefig(f"data/img/{dataset_name.replace(":","")}Most deviant steps.png")

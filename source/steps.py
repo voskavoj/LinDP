@@ -161,3 +161,54 @@ def compute_average_step(steps: list[Step], crop_to_shortest=False) -> Step:
     return Step(avg, avg, "", len(steps))
 
 
+def calculate_average_maximum_derivation(steps:list[Step]) -> list:
+
+    avg_max_derivation = [0.0, 0.0, 0.0]
+
+    for i, axis in enumerate(["Roll", "Pitch", "Yaw"]):
+        for step in steps:
+            # compute derivation
+            dxtx = step.df[axis].diff() / step.df['Time'].diff()
+            avg_max_derivation[i] += np.max(dxtx.abs())
+
+        avg_max_derivation[i] = avg_max_derivation[i] / len(steps)
+
+    return avg_max_derivation
+
+
+def filter_out_steps_by_derivation(steps: list[Step], axis: str, deriv_threshold: float) -> tuple[list[Step], list[Step]]:
+
+    if len(steps) == 0:
+        return [], []
+
+    kept_steps, dropped_steps = list(), list()
+
+    for step in steps:
+        # compute derivation
+        dxtx = step.df[axis].diff() / step.df['Time'].diff()
+
+        if any(dxtx.abs() > deriv_threshold):
+            dropped_steps.append(step)
+        else:
+            kept_steps.append(step)
+
+
+    return kept_steps, dropped_steps
+
+
+def filter_out_steps_by_density(steps: list[Step], density_threshold: float) -> tuple[list[Step], list[Step]]:
+
+    if len(steps) == 0:
+        return [], []
+
+    kept_steps, dropped_steps = list(), list()
+
+    for step in steps:
+        density = step.df.shape[0] / (step.df["Time"].iloc[-1] - step.df["Time"].iloc[0])
+
+        if density >= density_threshold:
+            kept_steps.append(step)
+        else:
+            dropped_steps.append(step)
+
+    return kept_steps, dropped_steps

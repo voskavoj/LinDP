@@ -22,6 +22,35 @@ class OneMeasSteps:
         self.no_of_steps = len(steps)
         self.parameters = Parameters()
 
+class OneMeasAverageStep:
+    def __init__(self, name:str, average_step, from_steps: list, filtered_manually: bool, do_not_parse_name=False):
+        self.name = name
+        self.filtered_manually = filtered_manually
+
+        self.is_healthy = None
+        self.is_menstr = None
+        self.is_before = None
+
+        self.average_step = average_step
+        self.from_steps = from_steps
+        self.from_number_of_steps = len(from_steps)
+
+        if not do_not_parse_name:
+            self.parse_name()
+
+    def parse_name(self):
+        arg_healthy = self.name.split("_")[0]
+        arg_menstr = self.name.split("_")[3]
+        arg_before = self.name.split(".")[0].split("_")[4]
+
+        if arg_healthy not in ["Z", "N"] or arg_menstr not in ["O", "M"] or arg_before not in ["pred", "po"]:
+            raise ValueError(f"Invalid name: {self.name}")
+
+        self.is_healthy = arg_healthy == "Z"
+        self.is_menstr = arg_menstr == "M"
+        self.is_before = arg_before == "pred"
+
+
 
 def tsv_to_dataframe(path, return_metadata=False):
     # remove diacritics

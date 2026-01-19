@@ -1,158 +1,71 @@
-import numpy as np
 from matplotlib import pyplot as plt
 
-from source import steps
-from source.data_processing import OneMeasSteps
-from source.files import load_with_pickle, get_all_files_in_directory
-from source.plotting import plot_average_step, set_dataset_name
-from source.steps import compute_average_step
+from source.data_processing import OneMeasSteps, OneMeasAverageStep
+from source.files import load_with_pickle, get_all_files_in_directory, save_with_pickle
+from source.plotting import plot_average_step, set_dataset_name, plot_most_deviant_step, plot_lowest_density_step
+from source.steps import compute_average_step, filter_out_steps_by_derivation, calculate_average_maximum_derivation, \
+    filter_out_steps_by_density, Step
 
 
-def find_average_step(data: OneMeasSteps):
+def auto_filter_steps(steps: list[Step], log=True):
+    kept_steps, dropped_steps = list(), list()
+
+    threshold_density = 80
+    threshold_deriv_r = 80
+    threshold_deriv_p = 60
+    threshold_deriv_y = 110
+    threshold_deriv_as_frac_of_avg = 1.3
+
+    # filter by density
+    kept_steps, dropped_steps_d = filter_out_steps_by_density(steps, threshold_density)
+    dropped_steps.extend(dropped_steps_d)
+
+    # filter by derivation
+    avg_deriv_r, avg_deriv_p, avg_deriv_y = calculate_average_maximum_derivation(steps)
+
+    kept_steps, dropped_steps_r = filter_out_steps_by_derivation(kept_steps, "Roll",  max(threshold_deriv_r, avg_deriv_r * threshold_deriv_as_frac_of_avg))
+    kept_steps, dropped_steps_p = filter_out_steps_by_derivation(kept_steps, "Pitch", max(threshold_deriv_p, avg_deriv_p * threshold_deriv_as_frac_of_avg))
+    kept_steps, dropped_steps_y = filter_out_steps_by_derivation(kept_steps, "Yaw",   max(threshold_deriv_y, avg_deriv_y * threshold_deriv_as_frac_of_avg))
+    dropped_steps.extend([*dropped_steps_r, *dropped_steps_p, *dropped_steps_y])
+
+    # report statistics
+    if log:
+        d, r, p, y = len(dropped_steps_d), len(dropped_steps_r), len(dropped_steps_p), len(dropped_steps_y)
+        col = '\033[93m' if len(kept_steps)/len(steps) < 0.8 else "" # '\033[92m'
+        print(col + f"{name}:\t{len(kept_steps):02.0f}/{len(steps):02.0f} ({round(100 * len(kept_steps)/len(steps)):03.0f}%) D:{d} R:{r} P:{p} Y:{y} | average r: {round(avg_deriv_r)} p: {round(avg_deriv_p)} y: {round(avg_deriv_y)}" + '\033[0m')
+
+    # try:
+    #     average_step = compute_average_step(kept_steps, True)
+    #     plot_average_step(kept_steps, average_step, dropped_steps)
+    #     plt.savefig(f"data/img_filt/{name.replace(":", "")}avg_steps.png")
+    #     plt.close()
+    # except IndexError:
+    #     print(f"No steps left in data {name}")
+
+    return kept_steps, dropped_steps
+
+
+def find_average_step(name: str, data: OneMeasSteps):
     steps, average_step, no_of_steps = data.steps, data.average_step, data.no_of_steps
 
-    # interpolated_steps = []
-    # for s in steps:
-    #     print(s.df)
-
-        # df = s.df
-        # # Set Time as index
-        # df = df.set_index("Time")
-        #
-        # # Create a full 10 ms time index
-        # full_time_index = np.arange(
-        #     df.index.min(),
-        #     df.index.max() + 0.01,
-        #     0.01
-        # )
-        #
-        # # Reindex to include missing timestamps
-        # df = df.reindex(full_time_index)
-        #
-        # # Interpolate linearly
-        # df_interpolated = df.interpolate(
-        #     method="linear",
-        #     limit_direction="both"
-        # )
-        #
-        # # Restore Time column
-        # df_interpolated = df_interpolated.reset_index().rename(
-        #     columns={"index": "Time"}
-        # )
-        #
-        # s.df_rel = df_interpolated
-        # s.df = df_interpolated
-        # interpolated_steps.append(s)
-        # print(s.df_rel)
-        # print("xxxxx")
-
-
-# # FIX AVERAGING FIRST
-#     for s in steps:
-#         # print(np.diff(s["Time"]))
-#         max_gap = np.max(np.diff(s["Time"]))
-#         # print(round(max_gap * 1000), "ms", "!!!!!!!!!!!!!!!" if max_gap > 0.1 else "", "yyyyyyyy" if max_gap <= 0.015 else "")
-#
-#         if max_gap >= 0.15:
-#             print("Yo!")
-
-    average_step = compute_average_step(steps, True)
-    plot_average_step(steps, average_step)
-
-
-
-    return
-
-
-
-    # plot_average_step(steps, average_step)
-
-    dropped_steps = list()
-
-# ## drop shortest
-#     idx = min(range(len(steps)), key=lambda i: steps[i].df.shape[0])
-#     dropped_steps.append(steps[idx])
-#     steps.pop(idx)
-#     no_of_steps -= 1
-# ## /drop shortest
-
-    average_step = compute_average_step(steps, True)
-    old_average_step = average_step
-    plot_average_step(steps, average_step, dropped_steps)
-
-## start dropping by variation
-
-    def rms_distance_to_average(df, df_avg):
-        # Align on Time (inner join keeps only common timestamps)
-        merged = df.merge(
-            df_avg,
-            on="Time",
-            suffixes=("", "_avg"),
-            how="inner"
-        )
-
-        # Compute squared distance at each time step
-        sq_dist = (
-                (merged["Roll"] - merged["Roll_avg"]) ** 2 +
-                (merged["Pitch"] - merged["Pitch_avg"]) ** 2 +
-                (merged["Yaw"] - merged["Yaw_avg"]) ** 2
-        )
-
-        # RMS distance
-        return np.sqrt(sq_dist.mean())
-
-    # JUST ONCE
-
-    rms_values = [rms_distance_to_average(step.df, average_step.df) for step in steps]
-    # print("rms_values", sorted(rms_values))
-
-    KEPT_STEPS = min(10, len(rms_values))
-    cutoff_rms = sorted(rms_values, reverse=True)[KEPT_STEPS - 1]
-
-    kept_steps = []
-    for i, step in enumerate(steps):
-        if rms_values[i] < cutoff_rms:
-
-            dropped_steps.append(step)
-        else:
-            kept_steps.append(step)
-
-    no_of_steps = len(kept_steps)
+    kept_steps, dropped_steps = auto_filter_steps(steps)
     average_step = compute_average_step(kept_steps, True)
 
-    plot_average_step(kept_steps, average_step, dropped_steps)
-
-    ## REPEATEDLY
-    # average_step = old_average_step
-    # dropped_steps = list()
-    # no_of_steps = len(steps)
-    # while no_of_steps > 6:
-    #     rms_values = [rms_distance_to_average(step.df, average_step.df) for step in steps]
-    #     print("rms_values", sorted(rms_values))
-    #
-    #     worst_rms_idx = rms_values.index(min(rms_values))
-    #     print("worst_rms_idx", worst_rms_idx)
-    #     dropped_steps.append(steps[worst_rms_idx])
-    #     steps.pop(worst_rms_idx)
-    #     no_of_steps -= 1
-    #     print(no_of_steps, len(steps))
-    #     average_step = compute_average_step(kept_steps, True)
-    #
-    # plot_average_step(steps, average_step)
-
-## /start dropping by variation
-
-
+    return OneMeasAverageStep(name, average_step, kept_steps, filtered_manually=False)
 
 
 if __name__ == "__main__":
 
-    data = ["Z_zu_ja_M_pred"]
-    data = get_all_files_in_directory("data/processed")
+    # data = ["Z_zu_ja_M_pred"]
+    # data = ["Z_mo_du_M_pred"]
+    data = get_all_files_in_directory("data/processed_steps")
 
     for name in data:
+        name = name.split(".")[0]
         set_dataset_name(name)
-        d = load_with_pickle("data/processed/", name)
-        find_average_step(d)
+
+        d = load_with_pickle("data/processed_steps/", name)
+        fd = find_average_step(name, d)
+        save_with_pickle(fd, "data/average_steps/", name + "_avg")
 
     plt.show()
