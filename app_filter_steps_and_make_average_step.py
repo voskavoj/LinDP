@@ -55,9 +55,6 @@ def find_average_step(name: str, data: OneMeasSteps):
 
 
 if __name__ == "__main__":
-
-    # data = ["Z_zu_ja_M_pred"]
-    # data = ["Z_mo_du_M_pred"]
     data = get_all_files_in_directory("data/processed_steps")
 
     for name in data:
