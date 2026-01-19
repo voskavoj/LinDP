@@ -30,6 +30,9 @@ class OneMeasAverageStep:
         self.is_healthy = None
         self.is_menstr = None
         self.is_before = None
+        self.arg_health = None
+        self.arg_menstr = None
+        self.arg_before = None
 
         self.average_step = average_step
         self.from_steps = from_steps
@@ -46,10 +49,13 @@ class OneMeasAverageStep:
         if arg_healthy not in ["Z", "N"] or arg_menstr not in ["O", "M"] or arg_before not in ["pred", "po"]:
             raise ValueError(f"Invalid name: {self.name}")
 
+        self.arg_health = arg_healthy
+        self.arg_menstr = arg_menstr
+        self.arg_before = arg_before
+
         self.is_healthy = arg_healthy == "Z"
         self.is_menstr = arg_menstr == "M"
         self.is_before = arg_before == "pred"
-
 
 
 def tsv_to_dataframe(path, return_metadata=False):

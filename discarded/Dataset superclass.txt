@@ -1,0 +1,26 @@
+class Dataset:
+    def __init__(self, data=list()):
+        self.data = {"Z": list(),
+                     "N": list(),
+                     "M": list(),
+                     "O": list(),
+                     "pred": list(),
+                     "po": list()
+        }
+
+        for d in data:
+            self.add(d)
+
+    def add(self, d: OneMeasAverageStep):
+        self.data[d.arg_health].append(d)
+        self.data[d.arg_menstr].append(d)
+        self.data[d.arg_before].append(d)
+
+    def list(self):
+        return [item for sublist in self.data.values() for item in sublist]
+
+    def __getitem__(self, item):
+        return Dataset(self.data[item])
+
+    def __getattr__(self, item):
+        return Dataset(self.data[item])

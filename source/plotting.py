@@ -129,7 +129,7 @@ def plot_average_step(steps: list[Step], average_step: Step, dropped_steps=None)
         dropped_steps = []
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
-    plt.suptitle(f"{dataset_name}Průměrný krok (ze {len(steps)})" + f" ({len(dropped_steps)} vyřazeno)" if dropped_steps is not None else "")
+    plt.suptitle(f"{dataset_name}Průměrný krok (ze {len(steps)})" + f" ({len(dropped_steps)} vyřazeno)" if dropped_steps else "")
 
     i = 1
     for y in ["Roll", "Pitch", "Yaw"]:
