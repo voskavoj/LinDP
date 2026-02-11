@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 
+from source.data_processing import OneMeasAverageStep
 from source.steps import Segment, Step
 
 dataset_name = ""
@@ -222,3 +223,35 @@ def plot_lowest_density_step(steps: list[Step]):
         plt.legend()
 
     # plt.savefig(f"data/img/{dataset_name.replace(":","")}Most deviant steps.png")
+
+
+def plot_dataset_average_steps(dataset: list[OneMeasAverageStep], name, legend=True, save=False):
+    plt.figure(figsize=(15, 10))
+    plt.tight_layout(pad=2)
+    plt.suptitle(f"{name}: Průměrné kroky ({len(dataset)} probandek)")
+
+    i = 1
+    for y in ["Roll", "Pitch", "Yaw"]:
+        plt.subplot(3, 1, i)
+        plt.grid(True, linestyle=':')
+        for meas in dataset:
+            plt.plot(meas.average_step.df["Time"], meas.average_step.df[y], ".-", label=f"{meas.name}")
+        plt.title(y)
+        plt.ylabel(f"{y} (°)")
+        i += 1
+    if legend:
+        plt.legend()
+
+    if save:
+        plt.savefig(f"export/{name}{' named' if legend else ''}.png")
+
+
+def translate_ids(h, m, b):
+    d = {"z": "Zdravé",
+         "n": "Nemocné",
+         "o": "Ovulace",
+         "m": "Menstruace",
+         "pred": "Před cvičením",
+         "po": " Po cvičení"}
+
+    return f"{d[h.lower()]}, {d[m.lower()]}, {d[b.lower()]}"

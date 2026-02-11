@@ -4,3 +4,5 @@
 /apps/source/__pycache__
 /apps/__pycache__/*.pyc
 /source/__pycache__/*.pyc
+/export
+/app_develop.py

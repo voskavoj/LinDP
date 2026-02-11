@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from source.files import load_with_pickle, get_all_files_in_directory, save_as_txt
-from source.plotting import plot_average_step, set_dataset_name
+from source.plotting import plot_average_step, set_dataset_name, plot_dataset_average_steps, translate_ids
 
 if __name__ == "__main__":
     data = get_all_files_in_directory("data/average_steps")
@@ -12,11 +12,7 @@ if __name__ == "__main__":
 
     export_data = []
 
-    data_z_o, data_z_m, data_n_o, data_n_m = list(), list(), list(), list()
-
     max_rolls, min_rolls, max_pitches, min_pitches, max_yaws, min_yaws = list(), list(), list(), list(), list(), list()
-
-
 
     all_data = load_with_pickle("data/datasets/", "dataset_dict")
     for h in ("Z", "N"):
@@ -48,20 +44,22 @@ if __name__ == "__main__":
                     min_pitches.append(min_p)
                     min_yaws.append(min_y)
 
-                    set_dataset_name(d.name)
-                    if random.randint(1, 10) <= 2:
-                        plot_average_step([], d.average_step)
+                plot_dataset_average_steps(one_meas_type, translate_ids(h, m, b), save=True)
 
-                export_data.append(f"Max roll (°)\t" + str(np.average(max_rolls)) + "\t" + "\t".join([str(m) for m in max_rolls]))
                 export_data.append(f"Min roll (°)\t" + str(np.average(min_rolls)) + "\t" + "\t".join([str(m) for m in min_rolls]))
-                export_data.append(f"Max pitch (°)\t" + str(np.average(max_pitches)) + "\t" + "\t".join([str(m) for m in max_pitches]))
+                export_data.append(f"Max roll (°)\t" + str(np.average(max_rolls)) + "\t" + "\t".join([str(m) for m in max_rolls]))
+                export_data.append(f"Range of roll (°)\t" + str(np.average(max_rolls) - np.average(min_rolls)) + "\t" + "\t".join([str(m - n) for m, n in zip(max_rolls, min_rolls)]))
                 export_data.append(f"Min pitch (°)\t" + str(np.average(min_pitches)) + "\t" + "\t".join([str(m) for m in min_pitches]))
-                export_data.append(f"Max yaw (°)\t" + str(np.average(max_yaws)) + "\t" + "\t".join([str(m) for m in max_yaws]))
+                export_data.append(f"Max pitch (°)\t" + str(np.average(max_pitches)) + "\t" + "\t".join([str(m) for m in max_pitches]))
+                export_data.append(f"Range of pitch (°)\t" + str(np.average(max_pitches) - np.average(min_pitches)) + "\t" + "\t".join([str(m - n) for m, n in zip(max_pitches, min_pitches)]))
                 export_data.append(f"Min yaw (°)\t" + str(np.average(min_yaws)) + "\t" + "\t".join([str(m) for m in min_yaws]))
+                export_data.append(f"Max yaw (°)\t" + str(np.average(max_yaws)) + "\t" + "\t".join([str(m) for m in max_yaws]))
+                export_data.append(f"Range of yaw (°)\t" + str(np.average(max_yaws) - np.average(min_yaws)) + "\t" + "\t".join([str(m - n) for m, n in zip(max_yaws, min_yaws)]))
                 export_data.append("")
 
     for e in export_data:
         print(e)
 
-    save_as_txt(export_data, "data/", "export")
+    save_as_txt(export_data, "export/", "statistiky")
+
     plt.show()
