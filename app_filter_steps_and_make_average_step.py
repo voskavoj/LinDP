@@ -30,6 +30,6 @@ if __name__ == "__main__":
 
         d = load_with_pickle("data/processed_steps/", name)
         fd = find_average_step(d)
-        save_with_pickle(fd, "data/average_steps_man/", name + "_avg")
+        save_with_pickle(fd, "data/average_steps_man/", name + "_avg_man")
 
     plt.show()
