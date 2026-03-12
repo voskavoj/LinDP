@@ -1,65 +1,82 @@
-import random
-
-import numpy as np
 from matplotlib import pyplot as plt
 
-from source.files import load_with_pickle, get_all_files_in_directory, save_as_txt
-from source.plotting import plot_average_step, set_dataset_name, plot_dataset_average_steps, translate_ids
+from source.files import load_with_pickle, save_as_txt
+from source.plotting import plot_dataset_average_steps, translate_ids
+from source.statistics import compare_different_groups_same_time, compare_same_groups_different_time, DatasetStatistics
+
 
 if __name__ == "__main__":
-    data = get_all_files_in_directory("data/average_steps")
-
-
-    export_data = []
-
-    max_rolls, min_rolls, max_pitches, min_pitches, max_yaws, min_yaws = list(), list(), list(), list(), list(), list()
+    export_lines = []
 
     all_data = load_with_pickle("data/datasets/", "dataset_dict")
+    data_statistics = all_data
+
+    # prepare data, calculate ranges
     for h in ("Z", "N"):
         for m in ("M", "O"):
-            for b in ("pred", ):
-                one_meas_type = all_data[h][m][b]
+            for b in ("pred", "po"):
+                dataset = DatasetStatistics(all_data[h][m][b], h, m, b)
+                data_statistics[h][m][b] = dataset
 
-                export_data.append(f"Data: {h} {m} {b}\tPrumer\t" + "\t".join([d.name for d in one_meas_type]))
-                print(export_data[-1])
-
-                max_rolls, min_rolls, max_pitches, min_pitches, max_yaws, min_yaws = list(), list(), list(), list(), list(), list()
-                for d in one_meas_type:
-
-                    avg_step = d.average_step
-                    no_of_steps = d.from_number_of_steps
-
-                    max_r = max(avg_step.df["Roll"])
-                    max_p = max(avg_step.df["Pitch"])
-                    max_y = max(avg_step.df["Yaw"])
-
-                    min_r = min(avg_step.df["Roll"])
-                    min_p = min(avg_step.df["Pitch"])
-                    min_y = min(avg_step.df["Yaw"])
-
-                    max_rolls.append(max_r)
-                    max_pitches.append(max_p)
-                    max_yaws.append(max_y)
-                    min_rolls.append(min_r)
-                    min_pitches.append(min_p)
-                    min_yaws.append(min_y)
-
-                plot_dataset_average_steps(one_meas_type, translate_ids(h, m, b), save=True)
-
-                export_data.append(f"Min roll (°)\t" + str(np.average(min_rolls)) + "\t" + "\t".join([str(m) for m in min_rolls]))
-                export_data.append(f"Max roll (°)\t" + str(np.average(max_rolls)) + "\t" + "\t".join([str(m) for m in max_rolls]))
-                export_data.append(f"Range of roll (°)\t" + str(np.average(max_rolls) - np.average(min_rolls)) + "\t" + "\t".join([str(m - n) for m, n in zip(max_rolls, min_rolls)]))
-                export_data.append(f"Min pitch (°)\t" + str(np.average(min_pitches)) + "\t" + "\t".join([str(m) for m in min_pitches]))
-                export_data.append(f"Max pitch (°)\t" + str(np.average(max_pitches)) + "\t" + "\t".join([str(m) for m in max_pitches]))
-                export_data.append(f"Range of pitch (°)\t" + str(np.average(max_pitches) - np.average(min_pitches)) + "\t" + "\t".join([str(m - n) for m, n in zip(max_pitches, min_pitches)]))
-                export_data.append(f"Min yaw (°)\t" + str(np.average(min_yaws)) + "\t" + "\t".join([str(m) for m in min_yaws]))
-                export_data.append(f"Max yaw (°)\t" + str(np.average(max_yaws)) + "\t" + "\t".join([str(m) for m in max_yaws]))
-                export_data.append(f"Range of yaw (°)\t" + str(np.average(max_yaws) - np.average(min_yaws)) + "\t" + "\t".join([str(m - n) for m, n in zip(max_yaws, min_yaws)]))
-                export_data.append("")
-
-    for e in export_data:
+                plot_dataset_average_steps(dataset.dataset, translate_ids(h, m, b), save=True)
+                export_lines.append(dataset.header())
+                export_lines.extend(dataset.lines())
+                export_lines.append("")
+                
+    for e in export_lines:
         print(e)
 
-    save_as_txt(export_data, "export/", "statistiky")
+    # do statistics
+    export_lines.append("")
+    del (h, m, b)
+    header_row = "Parametr\tTest\ts\tp\tVýsledek\tTest\ts\tp\tVýsledek\tTest\ts\tp\tVýsledek"
+    P_VALUE = 0.05
+
+    # 1) ZDRAVÉ vs NEMOCNÉ před cvičením, zvlášť pro ovulaci a menstruaci
+    b = "pred"
+    h1 = "Z"
+    h2 = "N"
+    for m in ("M", "O"):
+        export_lines.append(f"Srovnání {translate_ids(h1, m, b)} vs {translate_ids(h2, m, b)}")
+        export_lines.append(header_row)
+        for val in ["Roll", "Pitch", "Yaw"]:
+            for tp in ["Min", "Max", "Range"]:
+                rep = compare_different_groups_same_time(data_statistics[h1][m][b].get(tp, val), data_statistics[h2][m][b].get(tp, val), P_VALUE)
+                export_lines.append(f"{val}, {tp} (°)\t" + "\t".join(str(r) for r in rep))
+        export_lines.append("")
+    export_lines.append("")
+    del (h1, h2, m, b)
+
+    # 1B) ZDRAVÉ vs NEMOCNÉ po cvičení, zvlášť pro ovulaci a menstruaci
+    b = "po"
+    h1 = "Z"
+    h2 = "N"
+    for m in ("M", "O"):
+        export_lines.append(f"Srovnání {translate_ids(h1, m, b)} vs {translate_ids(h2, m, b)}")
+        export_lines.append(header_row)
+        for val in ["Roll", "Pitch", "Yaw"]:
+            for tp in ["Min", "Max", "Range"]:
+                rep = compare_different_groups_same_time(data_statistics[h1][m][b].get(tp, val), data_statistics[h2][m][b].get(tp, val), P_VALUE)
+                export_lines.append(f"{val}, {tp} (°)\t" + "\t".join(str(r) for r in rep))
+        export_lines.append("")
+    export_lines.append("")
+    del (h1, h2, m, b)
+
+    # 2, 3) zdravé/nemocné PŘED vs zdravé/nemocné PO cvičení, zvlášť pro ovulaci a menstruaci
+    for h in ("Z", "N"):
+        b1 = "pred"
+        b2 = "po"
+        for m in ("M", "O"):
+            export_lines.append(f"Srovnání {translate_ids(h, m, b1)} vs {translate_ids(h, m, b2)}")
+            export_lines.append(header_row)
+            for val in ["Roll", "Pitch", "Yaw"]:
+                for tp in ["Min", "Max", "Range"]:
+                    rep = compare_same_groups_different_time(data_statistics[h][m][b1].get(tp, val), data_statistics[h][m][b2].get(tp, val), P_VALUE)
+                    export_lines.append(f"{val}, {tp} (°)\t" + "\t".join(str(r) for r in rep))
+            export_lines.append("")
+
+        export_lines.append("")
+
+    save_as_txt(export_lines, "export/", "statistiky")
 
     plt.show()

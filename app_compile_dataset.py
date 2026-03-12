@@ -3,7 +3,7 @@ from source.files import load_with_pickle, get_all_files_in_directory, save_with
 
 
 if __name__ == "__main__":
-    data = get_all_files_in_directory("data/average_steps")
+    data = get_all_files_in_directory("data/average_steps_man", ".pickle")
 
     all_data = dict()
     for h in ("Z", "N"):
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     for name in data:
         name = name.split(".")[0]
 
-        d = load_with_pickle("data/average_steps/", name)
+        d = load_with_pickle("data/average_steps_man/", name)
         d: OneMeasAverageStep
         all_data[d.arg_health][d.arg_menstr][d.arg_before].append(d)
 
