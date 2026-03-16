@@ -90,7 +90,7 @@ if __name__ == "__main__":
         b2 = "po"
         for m in ("M", "O"):
             export_lines.append(f"Srovnání {translate_ids(h, m, b1)} vs {translate_ids(h, m, b2)}")
-            export_lines.append(header_row)
+            export_lines.append(header_row + "\tTest\tc_d\tEfekt")
             for val in ["Roll", "Pitch", "Yaw"]:
                 for tp in ["Min", "Max", "Range"]:
                     data_before, data_after = data_statistics[h][m][b1], data_statistics[h][m][b2]

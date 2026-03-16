@@ -1,3 +1,4 @@
+import numpy as np
 import scipy.stats as st
 
 from source.data_processing import OneMeasAverageStep
@@ -75,6 +76,18 @@ def perform_wilcoxon_test(a, b, alternative='two-sided'):
     res = st.wilcoxon(a, b, alternative=alternative, nan_policy='raise')
     return res.statistic, res.pvalue
 
+def perform_cohen_d(a, b):
+    na = len(a)
+    nb = len(b)
+    meana = np.mean(a)
+    meanb = np.mean(b)
+    stda = np.std(a, ddof=1)
+    stdb = np.std(a, ddof=1)
+    dof = na + nb - 2
+
+    return abs((meana - meanb) / np.sqrt(((na - 1) * stda**2 + (nb - 1) * stdb**2) / dof))
+
+
 def compare_different_groups_same_time(a, b, p_threshold):
     report = []
 
@@ -135,5 +148,11 @@ def compare_same_groups_different_time(a, b, p_threshold):
         significance = "signifikantni" if p < p_threshold else "nesignifikantni"
         print(f"\tVysledek: s = {s}, p = {p}. p {'<' if p < p_threshold else '>='} {p_threshold} ==> {significance}")
         report.extend([f"Wilcoxon", s, p, significance])
-    
+
+    print("Delam Cohen-D")
+    c_d = perform_cohen_d(a, b)
+    significance = "Velky" if c_d > 0.8 else "Maly" if c_d < 0.2 else "Stredni"
+    print(f"\tVysledek: c_d = {c_d} ==> {significance} efekt")
+    report.extend([f"Cohen-D", c_d, significance])
+
     return report
