@@ -8,6 +8,47 @@ from source.steps import Segment, Step
 
 dataset_name = ""
 
+name_aliases = {
+    "an_ju": "1a",
+    "ad_da": "2a",
+    "kl_ko": "3a",
+    "ev_hl": "4a",
+    "ma_ib": "5a",
+    "ad_ha": "6a",
+    "ju_po": "7a",
+    "an_do": "8a",
+    "la_ma": "9a",
+
+    "an_sk": "1b",
+    "mi_se": "2b",
+    "an_sr": "3b",
+    "ka_to": "4b",
+    "lu_ch": "5b",
+    "zu_ja": "6b",
+    "ad_st": "7b",
+    "al_si": "8b",
+    "ca_bo": "9b",
+    "mo_du": "10b",
+    "an_ha": "11b",
+    "kl_kn": "12b",
+}
+
+def replace_name_code_for_number(name):
+    for code in name_aliases.keys():
+        if code in name:
+            name = name.replace(code, name_aliases[code])
+            break
+    else:
+        raise ValueError(f"Nedefinovany kod probandky: {name}")
+    return name
+
+def alias(name):
+    if type(name) is str:
+        return replace_name_code_for_number(name)
+    else:
+        return [replace_name_code_for_number(n) for n in name]
+
+
 def set_dataset_name(new_name):
     global dataset_name
     dataset_name = f"{new_name}: "
@@ -76,7 +117,7 @@ def plot_all_data(df: pd.DataFrame):
 
 def plot_segments_axis(segments: list[Segment], axis: str, plot_heels=True, text=False):
     plt.figure()
-    plt.title(f"{dataset_name}Osa {axis}; Počet segmentů: {len(segments)}")
+    plt.title(f"{alias(dataset_name)}Osa {axis}; Počet segmentů: {len(segments)}")
     for s in segments:
         plt.plot(s['Time'], s[axis], ".-")
         if plot_heels and s.heelstrikes is not None:
@@ -90,7 +131,7 @@ def plot_segments_axis(segments: list[Segment], axis: str, plot_heels=True, text
 def plot_segment_data(segments: list[Segment], plot_heels=True, plot_legs=True):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
-    plt.suptitle(f"{dataset_name}Segmenty ({len(segments)}x)")
+    plt.suptitle(f"{alias(dataset_name)}Segmenty ({len(segments)}x)")
 
     i = 1
     for y in ["X", "Y", "Z"]:
@@ -130,7 +171,7 @@ def plot_average_step(steps: list[Step], average_step: Step, dropped_steps=None)
         dropped_steps = []
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
-    plt.suptitle(f"{dataset_name}Průměrný krok (ze {len(steps)})" + (f" ({len(dropped_steps)} vyřazeno)" if dropped_steps else ""))
+    plt.suptitle(f"{alias(dataset_name)}Průměrný krok (ze {len(steps)})" + (f" ({len(dropped_steps)} vyřazeno)" if dropped_steps else ""))
 
     i = 1
     for y in ["Roll", "Pitch", "Yaw"]:
@@ -150,7 +191,7 @@ def plot_average_step(steps: list[Step], average_step: Step, dropped_steps=None)
 def plot_valid_steps(all_data: DataFrame, steps: list[Step], plot_numbers=True):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
-    plt.suptitle(f"{dataset_name}Data vs. validní kroky ({len(steps)} kroků)")
+    plt.suptitle(f"{alias(dataset_name)}Data vs. validní kroky ({len(steps)} kroků)")
 
     i = 0
     for y in ["X", "Roll", "Y", "Pitch", "Z", "Yaw"]:
@@ -225,25 +266,26 @@ def plot_lowest_density_step(steps: list[Step]):
     # plt.savefig(f"data/img/{dataset_name.replace(":","")}Most deviant steps.png")
 
 
-def plot_dataset_average_steps(dataset: list[OneMeasAverageStep], name, legend=True, save=False):
+def plot_dataset_average_steps(dataset: list[OneMeasAverageStep], name, save=False):
     plt.figure(figsize=(15, 10))
     plt.tight_layout(pad=2)
     plt.suptitle(f"{name}: Průměrné kroky ({len(dataset)} probandek)")
+
 
     i = 1
     for y in ["Roll", "Pitch", "Yaw"]:
         plt.subplot(3, 1, i)
         plt.grid(True, linestyle=':')
         for meas in dataset:
-            plt.plot(meas.average_step.df["Time"], meas.average_step.df[y], ".-", label=f"{meas.name}")
-        plt.title(y)
+            plt.plot(meas.average_step.df["Time"], meas.average_step.df[y], ".-", label=f"{alias(meas.name)}")
         plt.ylabel(f"{y} (°)")
         i += 1
-    if legend:
-        plt.legend()
+
+    plt.xlabel("Čas (s)")
+    plt.legend()
 
     if save:
-        plt.savefig(f"export/{name}{' named' if legend else ''}.png")
+        plt.savefig(f"export/{name}.png")
 
 
 def translate_ids(h, m, b):
