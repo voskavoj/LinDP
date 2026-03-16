@@ -33,6 +33,32 @@ name_aliases = {
     "kl_kn": "12b",
 }
 
+alias_colors = {
+    "1a": "#e6194b",
+    "2a": "#3cb44b",
+    "3a": "#4363d8",
+    "4a": "#f58231",
+    "5a": "#911eb4",
+    "6a": "#46f0f0",
+    "7a": "#f032e6",
+    "8a": "#bcf60c",
+    "9a": "#fabebe",
+
+    "1b": "#008080",
+    "2b": "#e6beff",
+    "3b": "#9a6324",
+    "4b": "#fffac8",
+    "5b": "#800000",
+    "6b": "#aaffc3",
+    "7b": "#808000",
+    "8b": "#ffd8b1",
+    "9b": "#000075",
+    "10b":"#808080",
+    "11b":"#000000",
+    "12b":"#ff7f00",
+}
+
+
 def replace_name_code_for_number(name):
     for code in name_aliases.keys():
         if code in name:
@@ -42,11 +68,19 @@ def replace_name_code_for_number(name):
         raise ValueError(f"Nedefinovany kod probandky: {name}")
     return name
 
+
 def alias(name):
     if type(name) is str:
         return replace_name_code_for_number(name)
     else:
         return [replace_name_code_for_number(n) for n in name]
+
+
+def alcol(name):
+    for code in alias_colors.keys():
+        if code in name:
+            return alias_colors[code]
+    raise ValueError(f"Nedefinovana barva probandky: {name}")
 
 
 def set_dataset_name(new_name):
@@ -96,6 +130,7 @@ def plot_axis(df: pd.DataFrame, axis, show=False):
 
     if show:
         plt.show()
+
 
 def plot_all_data(df: pd.DataFrame):
     plt.figure()
@@ -277,7 +312,7 @@ def plot_dataset_average_steps(dataset: list[OneMeasAverageStep], name, save=Fal
         plt.subplot(3, 1, i)
         plt.grid(True, linestyle=':')
         for meas in dataset:
-            plt.plot(meas.average_step.df["Time"], meas.average_step.df[y], ".-", label=f"{alias(meas.name)}")
+            plt.plot(meas.average_step.df["Time"], meas.average_step.df[y], ".-", label=f"{alias(meas.name)}", color=alcol(alias(meas.name)))
         plt.ylabel(f"{y} (°)")
         i += 1
 
