@@ -313,7 +313,7 @@ def plot_dataset_average_steps(dataset: list[OneMeasAverageStep], name, save=Fal
         plt.grid(True, linestyle=':')
         for meas in dataset:
             plt.plot(meas.average_step.df["Time"], meas.average_step.df[y], ".-", label=f"{alias(meas.name)}", color=alcol(alias(meas.name)))
-        plt.ylabel(f"{y} (°)")
+        plt.ylabel(f"{translate_axis(y)} (°)")
         i += 1
 
     plt.xlabel("Čas (s)")
@@ -321,6 +321,27 @@ def plot_dataset_average_steps(dataset: list[OneMeasAverageStep], name, save=Fal
 
     if save:
         plt.savefig(f"export/{name}.png")
+
+
+def plot_dataset_average_steps_no_legend(dataset: list[OneMeasAverageStep], name, save=False):
+    plt.figure(figsize=(15, 10))
+    plt.tight_layout(pad=2)
+    plt.suptitle(f"{name}: Průměrné kroky")
+
+
+    i = 1
+    for y in ["Roll", "Pitch", "Yaw"]:
+        plt.subplot(3, 1, i)
+        plt.grid(True, linestyle=':')
+        for meas in dataset:
+            plt.plot(meas.average_step.df["Time"], meas.average_step.df[y], ".-", label=f"{alias(meas.name)}", color=alcol(alias(meas.name)))
+        plt.ylabel(f"{translate_axis(y)} (°)")
+        i += 1
+
+    plt.xlabel("Čas (s)")
+
+    if save:
+        plt.savefig(f"export/{name}_no_legend.png")
 
 
 def translate_ids(h, m, b):

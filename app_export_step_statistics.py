@@ -2,7 +2,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from source.files import load_with_pickle, save_as_txt
-from source.plotting import plot_dataset_average_steps, translate_ids, alias, alcol, translate_axis
+from source.plotting import plot_dataset_average_steps, translate_ids, alias, alcol, translate_axis, \
+    plot_dataset_average_steps_no_legend
 from source.statistics import compare_different_groups_same_time, compare_same_groups_different_time, DatasetStatistics
 from source.steps import compute_average_step
 
@@ -68,6 +69,7 @@ if __name__ == "__main__":
                 data_statistics[h][m][b] = dataset
 
                 plot_dataset_average_steps(dataset.dataset, translate_ids(h, m, b), save=True)
+                plot_dataset_average_steps_no_legend(dataset.dataset, translate_ids(h, m, b), save=True)
                 export_lines.append(dataset.header())
                 export_lines.extend(dataset.lines())
                 export_lines.append("")
