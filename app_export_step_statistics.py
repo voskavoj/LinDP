@@ -2,8 +2,34 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from source.files import load_with_pickle, save_as_txt
-from source.plotting import plot_dataset_average_steps, translate_ids
+from source.plotting import plot_dataset_average_steps, translate_ids, alias, alcol, translate_axis
 from source.statistics import compare_different_groups_same_time, compare_same_groups_different_time, DatasetStatistics
+from source.steps import compute_average_step
+
+
+def plot_versus(name_a, name_b, dataset_a, dataset_b):
+    # make average step
+    avg_step_a = compute_average_step([one_meas_type.average_step for one_meas_type in dataset_a], True)
+    avg_step_b = compute_average_step([one_meas_type.average_step for one_meas_type in dataset_b], True)
+
+    plt.figure(figsize=(15, 10))
+    plt.tight_layout(pad=2)
+    plt.suptitle(f"Srovnání {name_a} vs {name_b}")
+
+    i = 1
+    for y in ["Roll", "Pitch", "Yaw"]:
+        plt.subplot(3, 1, i)
+        plt.grid(True, linestyle=':')
+        plt.plot(avg_step_a.df["Time"], avg_step_a.df[y], ".-", label=name_a)
+        plt.plot(avg_step_b.df["Time"], avg_step_b.df[y], ".-", label=name_b)
+        plt.ylabel(f"{translate_axis(y)} (°)")
+        i += 1
+
+    plt.xlabel("Čas (s)")
+    plt.legend()
+
+    plt.savefig(f"export/Srovnání {name_a} vs {name_b}.png")
+
 
 
 def filter_by_indices(list_1: list, indices: list):
@@ -62,6 +88,9 @@ if __name__ == "__main__":
     for m in ("M", "O"):
         export_lines.append(f"Srovnání {translate_ids(h1, m, b)} vs {translate_ids(h2, m, b)}")
         export_lines.append(header_row + "\tPrůmer A\tPrůměr B")
+
+        plot_versus(translate_ids(h1, m, b), translate_ids(h2, m, b), data_statistics[h1][m][b].dataset, data_statistics[h2][m][b].dataset)
+
         for val in ["Roll", "Pitch", "Yaw"]:
             for tp in ["Min", "Max", "Range"]:
                 rep = compare_different_groups_same_time(data_statistics[h1][m][b].get(tp, val), data_statistics[h2][m][b].get(tp, val), P_VALUE)
@@ -77,6 +106,12 @@ if __name__ == "__main__":
     for m in ("M", "O"):
         export_lines.append(f"Srovnání {translate_ids(h1, m, b)} vs {translate_ids(h2, m, b)}")
         export_lines.append(header_row + "\tPrůmer A\tPrůměr B")
+
+        plot_versus(translate_ids(h1, m, b),
+                    translate_ids(h2, m, b),
+                    data_statistics[h1][m][b].dataset,
+                    data_statistics[h2][m][b].dataset)
+
         for val in ["Roll", "Pitch", "Yaw"]:
             for tp in ["Min", "Max", "Range"]:
                 rep = compare_different_groups_same_time(data_statistics[h1][m][b].get(tp, val), data_statistics[h2][m][b].get(tp, val), P_VALUE)
@@ -92,6 +127,12 @@ if __name__ == "__main__":
         for m in ("M", "O"):
             export_lines.append(f"Srovnání {translate_ids(h, m, b1)} vs {translate_ids(h, m, b2)}")
             export_lines.append(header_row + "\tTest\tc_d\tEfekt" + "\tPrůmer A\tPrůměr B")
+
+            plot_versus(translate_ids(h, m, b1),
+                        translate_ids(h, m, b2),
+                        data_statistics[h][m][b1].dataset,
+                        data_statistics[h][m][b2].dataset)
+
             for val in ["Roll", "Pitch", "Yaw"]:
                 for tp in ["Min", "Max", "Range"]:
                     data_before, data_after = data_statistics[h][m][b1], data_statistics[h][m][b2]

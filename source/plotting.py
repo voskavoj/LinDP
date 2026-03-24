@@ -324,11 +324,18 @@ def plot_dataset_average_steps(dataset: list[OneMeasAverageStep], name, save=Fal
 
 
 def translate_ids(h, m, b):
-    d = {"z": "Zdravé",
-         "n": "Nemocné",
-         "o": "Ovulace",
-         "m": "Menstruace",
-         "pred": "Před cvičením",
-         "po": " Po cvičení"}
+    d = {"z": "Skupina B",
+         "n": "Skupina A",
+         "o": "Periovulační fáze",
+         "m": "Menstruační fáze",
+         "pred": "Před experimentem",
+         "po": " Po experimentu"}
 
     return f"{d[h.lower()]}, {d[m.lower()]}, {d[b.lower()]}"
+
+def translate_axis(axis):
+    d = {"roll": "Frontální",
+         "pitch": "Sagitální",
+         "yaw": "Transverzální"}
+
+    return f"{d[axis.lower()]} rovina"
