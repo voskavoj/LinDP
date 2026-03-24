@@ -1,3 +1,4 @@
+import numpy as np
 from matplotlib import pyplot as plt
 
 from source.files import load_with_pickle, save_as_txt
@@ -60,11 +61,11 @@ if __name__ == "__main__":
     h2 = "N"
     for m in ("M", "O"):
         export_lines.append(f"Srovnání {translate_ids(h1, m, b)} vs {translate_ids(h2, m, b)}")
-        export_lines.append(header_row)
+        export_lines.append(header_row + "\tPrůmer A\tPrůměr B")
         for val in ["Roll", "Pitch", "Yaw"]:
             for tp in ["Min", "Max", "Range"]:
                 rep = compare_different_groups_same_time(data_statistics[h1][m][b].get(tp, val), data_statistics[h2][m][b].get(tp, val), P_VALUE)
-                export_lines.append(f"{val}, {tp} (°)\t" + "\t".join(str(r) for r in rep))
+                export_lines.append(f"{val}, {tp} (°)\t" + "\t".join(str(r) for r in rep) + f"\t{np.average(data_statistics[h1][m][b].get(tp, val))}" + f"\t{np.average(data_statistics[h2][m][b].get(tp, val))}")
         export_lines.append("")
     export_lines.append("")
     del (h1, h2, m, b)
@@ -75,11 +76,11 @@ if __name__ == "__main__":
     h2 = "N"
     for m in ("M", "O"):
         export_lines.append(f"Srovnání {translate_ids(h1, m, b)} vs {translate_ids(h2, m, b)}")
-        export_lines.append(header_row)
+        export_lines.append(header_row + "\tPrůmer A\tPrůměr B")
         for val in ["Roll", "Pitch", "Yaw"]:
             for tp in ["Min", "Max", "Range"]:
                 rep = compare_different_groups_same_time(data_statistics[h1][m][b].get(tp, val), data_statistics[h2][m][b].get(tp, val), P_VALUE)
-                export_lines.append(f"{val}, {tp} (°)\t" + "\t".join(str(r) for r in rep))
+                export_lines.append(f"{val}, {tp} (°)\t" + "\t".join(str(r) for r in rep) + f"\t{np.average(data_statistics[h1][m][b].get(tp, val))}" + f"\t{np.average(data_statistics[h2][m][b].get(tp, val))}")
         export_lines.append("")
     export_lines.append("")
     del (h1, h2, m, b)
@@ -90,7 +91,7 @@ if __name__ == "__main__":
         b2 = "po"
         for m in ("M", "O"):
             export_lines.append(f"Srovnání {translate_ids(h, m, b1)} vs {translate_ids(h, m, b2)}")
-            export_lines.append(header_row + "\tTest\tc_d\tEfekt")
+            export_lines.append(header_row + "\tTest\tc_d\tEfekt" + "\tPrůmer A\tPrůměr B")
             for val in ["Roll", "Pitch", "Yaw"]:
                 for tp in ["Min", "Max", "Range"]:
                     data_before, data_after = data_statistics[h][m][b1], data_statistics[h][m][b2]
@@ -99,7 +100,7 @@ if __name__ == "__main__":
                     rep = compare_same_groups_different_time(filter_by_indices(data_before.get(tp, val), common_indices1),
                                                              filter_by_indices(data_after.get(tp, val), common_indices2),
                                                              P_VALUE)
-                    export_lines.append(f"{val}, {tp} (°)\t" + "\t".join(str(r) for r in rep))
+                    export_lines.append(f"{val}, {tp} (°)\t" + "\t".join(str(r) for r in rep) + f"\t{np.average(data_statistics[h][m][b1].get(tp, val))}" + f"\t{np.average(data_statistics[h][m][b2].get(tp, val))}")
             export_lines.append(f"Pouze {filter_by_indices(data_before.names, common_indices1)}")
             export_lines.append(f"proti {filter_by_indices(data_after.names, common_indices2)}")
             export_lines.append("")
